@@ -7,6 +7,7 @@ router.get('/', controller.path)
 router.post('/register', controller.register);
 router.post('/login', controller.login);
 router.post('/logout', controller.logout);
-router.post('/aksi', cekToken, controller.aksi);
+router.post('/profile', cekToken, controller.profile);
+router.put('/editProfile', cekToken, controller.editProfile);
 
 module.exports = router;

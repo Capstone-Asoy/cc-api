@@ -50,16 +50,16 @@ exports.register = (req, res) => {
 				id: user_id,
 				name: name
 			}
-		
+
 			const token = jwt.sign(payload, 'jwtrahasia', {
 				expiresIn: 86400 // aktif selama 24 jam 
 			});
-		
+
 			res.status(201).json({
 				data,
 				statusCode: 'Success',
 				message: 'Register berhasil bang',
-				auth: true, 
+				auth: true,
 				token: token
 			})
 		}
@@ -120,11 +120,10 @@ exports.logout = (req, res) => {
 }
 
 // contoh aksi (uji coba mengambil user_id)
-exports.aksi = (req, res) => {
+exports.profile = (req, res) => {
 	const userId = req.userId
-	const { aksi } = req.body
 
-	const sql = `insert into aksi (user_id, action) values ('${userId}', '${aksi}')`
+	const sql = `select * from user where user_id = '${userId}'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -132,18 +131,51 @@ exports.aksi = (req, res) => {
 			message: err.message
 		})
 
-		if (fields?.affectedRows) {
-			// console.log("data berhasil ditambahkans");
-			const data = {
-				isSucces: fields.affectedRows,
-				id: req.userId,
-				name: req.name
-			}
-			res.status(201).json({
-				data,
-				statusCode: 'Success',
-				message: 'Data berhasil disimpan'
-			})
+		// console.log("data berhasil ditambahkans");
+		const data = {
+			id: req.userId,
+			name: req.name
 		}
+		res.status(201).json({
+			statusCode: 'Success',
+			message: 'Data user berhasil ditampilkan',
+			data,
+		})
+	})
+}
+
+exports.editProfile = (req, res) => {
+	const userId = req.userId
+	const {nama, minat_genre} = req.body
+
+	const sql = `update user set name = '${nama}', minat_genre = '${minat_genre}' where user_id = '${userId}'`
+
+	db.query(sql, (err, fields) => {
+		if (err) return res.status(500).json({
+			statusCode: 'Fail',
+			message: err.message
+		})
+
+		const data = {
+			id: req.userId,
+			name: nama,
+			minat_genre: minat_genre
+		}
+
+		const payload = {
+			id: req.userId,
+			name: nama
+		}
+
+		const token = jwt.sign(payload, 'jwtrahasia', {
+			expiresIn: 86400 // aktif selama 24 jam 
+		});
+
+		res.status(201).json({
+			statusCode: 'Success',
+			message: 'Data berhasil di edit',
+			data,
+			token
+		})
 	})
 }
