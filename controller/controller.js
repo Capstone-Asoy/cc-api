@@ -2,6 +2,8 @@ const db = require('../db/connect')
 const { nanoid } = require('nanoid')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken');
+const multer = require('multer')
+const bucket = require('../storage/upload')
 
 exports.path = (req, res) => {
 	try {
@@ -18,51 +20,91 @@ exports.path = (req, res) => {
 }
 
 // ketika user melakuakn register
-exports.register = (req, res) => {
-	const { name, password, minat_genre } = req.body
-
-	if (!name || !password) {
-		return res.status(400).json({
-			message: 'name and password masih kosong!'
-		});
+const upload = multer({
+	storage: multer.memoryStorage(),
+	limits: {
+		fileSize: 5 * 1024 * 1024 // max file size 5 MB
 	}
+});
 
-	const hashPass = bcrypt.hashSync(password, 5);
-	const user_id = nanoid(8)
-
-	const sql = `insert into user (user_id, name, password, minat_genre) values ('${user_id}', '${name}', '${hashPass}', '${minat_genre}')`
-
-	db.query(sql, (err, fields) => {
-		// if (err) throw err
-		// kode diatas akan menyebabkan crash maka dari itu menggunakan kode dibawah
-		if (err) return res.status(500).json({
-			statusCode: 'Fail',
-			message: err.message
-		})
-		if (fields?.affectedRows) {
-			// console.log("data berhasil ditambahkans");
-			const data = {
-				isSucces: fields.affectedRows,
-				id: user_id
-			}
-
-			const payload = {
-				id: user_id,
-				name: name
-			}
-
-			const token = jwt.sign(payload, 'jwtrahasia', {
-				expiresIn: 86400 // aktif selama 24 jam 
+exports.register = (req, res) => {
+	upload.single('image')(req, res, async function (err) {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
 			});
-
-			res.status(201).json({
-				data,
-				statusCode: 'Success',
-				message: 'Register berhasil bang',
-				auth: true,
-				token: token
-			})
 		}
+
+		const { name, password, minat_genre, email, username } = req.body;
+
+		if (!email || !password) {
+			return res.status(400).json({
+				message: 'Email and password masih kosong!'
+			});
+		}
+
+		const hashPass = bcrypt.hashSync(password, 5);
+		const user_id = nanoid(8);
+		const image = req.file ? req.file.originalname : '';
+
+		const sql = `INSERT INTO user (user_id, name, password, minat_genre, username, image, email) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+		try {
+			if (req.file) {
+				const blob = bucket.file(req.file.originalname);
+				const blobStream = blob.createWriteStream({
+					resumable: false
+				});
+
+				blobStream.on('error', err => {
+					throw new Error(err.message);
+				});
+
+				blobStream.on('finish', async () => {
+					// File uploaded successfully, now insert into DB
+					db.query(sql, [user_id, name, hashPass, minat_genre, username, image, email], (err, fields) => {
+						if (err) {
+							return res.status(500).json({
+								statusCode: 'Fail',
+								message: err.message
+							});
+						}
+
+						if (fields.affectedRows) {
+							const data = {
+								isSucces: fields.affectedRows,
+								id: user_id
+							};
+
+							const payload = {
+								id: user_id,
+								name: name
+							};
+
+							const token = jwt.sign(payload, 'jwtrahasia', {
+								expiresIn: 86400 // aktif selama 24 jam
+							});
+
+							res.status(201).json({
+								data,
+								statusCode: 'Success',
+								message: 'Register berhasil bang',
+								auth: true,
+								token: token
+							});
+						}
+					});
+				});
+
+				blobStream.end(req.file.buffer);
+			}
+		} catch (err) {
+            res.status(500).json({
+                statusCode: 'Fail',
+                message: err.message
+            });
+        }
 	})
 }
 
@@ -146,7 +188,7 @@ exports.profile = (req, res) => {
 
 exports.editProfile = (req, res) => {
 	const userId = req.userId
-	const {nama, minat_genre} = req.body
+	const { nama, minat_genre } = req.body
 
 	const sql = `update user set name = '${nama}', minat_genre = '${minat_genre}' where user_id = '${userId}'`
 
@@ -193,13 +235,15 @@ exports.getBook = (req, res) => {
 		res.status(200).json({
 			statusCode: 'Success',
 			message: "Data berhasil ditampilkan",
-			data: {fields}
+			data: { fields }
 		})
 	})
 }
 
 exports.filtering = (req, res) => {
 	const { genre } = req.query
+	const userId = req.userId
+	console.log(userId);
 
 	const sql = `select * from books where genre like '%${genre}%'`
 
@@ -213,7 +257,7 @@ exports.filtering = (req, res) => {
 		res.status(200).json({
 			statusCode: 'Success',
 			message: "Data berhasil ditampilkan (menggunakan query)",
-			data: {fields}
+			data: { fields }
 		})
 	})
 }
