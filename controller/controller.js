@@ -197,6 +197,7 @@ exports.profile = (req, res) => {
 	})
 }
 
+//belom valid
 exports.editProfile = (req, res) => {
 	const userId = req.userId
 	const { nama, minat_genre } = req.body
