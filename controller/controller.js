@@ -48,22 +48,21 @@ exports.register = (req, res) => {
 		const user_id = nanoid(8);
 		const image = req.file ? req.file.originalname : '';
 
-		const sql = `INSERT INTO user (user_id, name, password, minat_genre, username, image, email) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+		const sql = `insert into user (user_id, name, password, minat_genre, username, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${minat_genre}', '${username}', '${image}', '${email}')`;
 
 		try {
 			if (req.file) {
-				const blob = bucket.file(req.file.originalname);
-				const blobStream = blob.createWriteStream({
+				const save = bucket.file(req.file.originalname);
+				const saveToBucket = save.createWriteStream({
 					resumable: false
 				});
 
-				blobStream.on('error', err => {
+				saveToBucket.on('error', err => {
 					throw new Error(err.message);
 				});
 
-				blobStream.on('finish', async () => {
-					// File uploaded successfully, now insert into DB
-					db.query(sql, [user_id, name, hashPass, minat_genre, username, image, email], (err, fields) => {
+				saveToBucket.on('finish', async () => { //kalo berhasil menyimpan gambar ke dalam bucket
+					db.query(sql, (err, fields) => {
 						if (err) {
 							return res.status(500).json({
 								statusCode: 'Fail',
@@ -79,7 +78,8 @@ exports.register = (req, res) => {
 
 							const payload = {
 								id: user_id,
-								name: name
+								name: name,
+								email: email
 							};
 
 							const token = jwt.sign(payload, 'jwtrahasia', {
@@ -97,7 +97,7 @@ exports.register = (req, res) => {
 					});
 				});
 
-				blobStream.end(req.file.buffer);
+				saveToBucket.end(req.file.buffer);
 			}
 		} catch (err) {
             res.status(500).json({
@@ -110,15 +110,15 @@ exports.register = (req, res) => {
 
 // ketika user melakukan login
 exports.login = (req, res) => {
-	const { name, password } = req.body
+	const { email, password } = req.body
 
-	if (!name || !password) {
+	if (!email || !password) {
 		return res.status(400).json({
-			message: 'nama dan password diperlukan'
+			message: 'email dan password diperlukan'
 		})
 	}
 
-	const sql = `select * from user where name = '${name}'`
+	const sql = `select * from user where email = '${email}'`
 
 	db.query(sql, (err, data) => {
 		if (err) return res.status(500).json({
@@ -143,7 +143,8 @@ exports.login = (req, res) => {
 
 		const payload = {
 			id: user.user_id,
-			name: user.name
+			name: user.name,
+			email: user.email
 		}
 
 		const token = jwt.sign(payload, 'jwtrahasia', {
@@ -165,7 +166,11 @@ exports.logout = (req, res) => {
 exports.profile = (req, res) => {
 	const userId = req.userId
 
-	const sql = `select * from user where user_id = '${userId}'`
+	const sql = `select u.name, u.username, u.image, 
+				 		count (h.history_id) as reading_list
+				 from user u
+				 left join history h on u.user_id = h.user_id
+				 where u.user_id = '${userId}'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -174,14 +179,14 @@ exports.profile = (req, res) => {
 		})
 
 		// console.log("data berhasil ditambahkans");
-		const data = {
-			id: req.userId,
-			name: req.name
-		}
+		// const data = {
+		// 	id: req.userId,
+		// 	name: req.name
+		// }
 		res.status(201).json({
 			statusCode: 'Success',
 			message: 'Data user berhasil ditampilkan',
-			data,
+			data: fields
 		})
 	})
 }

@@ -24,6 +24,7 @@ function cekToken(req, res, next) {
 
         req.userId = decoded.id; // Menyimpan userID dari token ke dalam request
         req.name = decoded.name
+        req.email = decoded.email
         next(); // Lanjutkan ke handler berikutnya
     });
 }
