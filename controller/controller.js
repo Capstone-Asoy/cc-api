@@ -174,9 +174,9 @@ exports.profile = (req, res) => {
 
 	const sql = `select u.name, u.username, u.image, 
                   count (b.bookmark_id) as reading_list
-             from user u
-             left join bookmarks b on u.user_id = b.user_id
-             where u.user_id = '${userId}'`
+				from user u
+				left join bookmarks b on u.user_id = b.user_id
+				where u.user_id = '${userId}'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
