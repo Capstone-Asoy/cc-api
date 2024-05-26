@@ -23,7 +23,7 @@ exports.path = (req, res) => {
 const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: {
-		fileSize: 5 * 1024 * 1024 // max file size 5 MB
+		fileSize: 5 * 1024 * 1024 // max file 5 MB
 	}
 });
 
@@ -61,50 +61,56 @@ exports.register = (req, res) => {
 					throw new Error(err.message);
 				});
 
-				saveToBucket.on('finish', async () => { //kalo berhasil menyimpan gambar ke dalam bucket
-					db.query(sql, (err, fields) => {
-						if (err) {
-							return res.status(500).json({
-								statusCode: 'Fail',
-								message: err.message
-							});
-						}
-
-						if (fields.affectedRows) {
-							const data = {
-								isSucces: fields.affectedRows,
-								id: user_id
-							};
-
-							const payload = {
-								id: user_id,
-								name: name,
-								email: email
-							};
-
-							const token = jwt.sign(payload, 'jwtrahasia', {
-								expiresIn: 86400 // aktif selama 24 jam
-							});
-
-							res.status(201).json({
-								data,
-								statusCode: 'Success',
-								message: 'Register berhasil bang',
-								auth: true,
-								token: token
-							});
-						}
-					});
+				const uploadFinished = new Promise((resolve, reject) => {
+					saveToBucket.on('finish', resolve);
+					saveToBucket.on('error', reject);
 				});
 
 				saveToBucket.end(req.file.buffer);
+
+				await uploadFinished
+
+
+				db.query(sql, (err, fields) => {
+					if (err) {
+						return res.status(500).json({
+							statusCode: 'Fail',
+							message: err.message
+						});
+					}
+
+					if (fields.affectedRows) {
+						const data = {
+							isSucces: fields.affectedRows,
+							id: user_id
+						};
+
+						const payload = {
+							id: user_id,
+							name: name,
+							email: email
+						};
+
+						const token = jwt.sign(payload, 'jwtrahasia', {
+							expiresIn: 86400 // aktif selama 24 jam
+						});
+
+						res.status(201).json({
+							data,
+							statusCode: 'Success',
+							message: 'Register berhasil bang',
+							auth: true,
+							token: token
+						});
+					}
+				});
 			}
 		} catch (err) {
-            res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message
-            });
-        }
+			res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
 	})
 }
 
@@ -167,10 +173,10 @@ exports.profile = (req, res) => {
 	const userId = req.userId
 
 	const sql = `select u.name, u.username, u.image, 
-				 		count (b.bookmark_id) as reading_list
-				 from user u
-				 left join bookmarks b on u.user_id = b.user_id
-				 where u.user_id = '${userId}'`
+                  count (b.bookmark_id) as reading_list
+             from user u
+             left join bookmarks b on u.user_id = b.user_id
+             where u.user_id = '${userId}'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -180,8 +186,8 @@ exports.profile = (req, res) => {
 
 		// console.log("data berhasil ditambahkans");
 		// const data = {
-		// 	id: req.userId,
-		// 	name: req.name
+		//    id: req.userId,
+		//    name: req.name
 		// }
 		res.status(201).json({
 			statusCode: 'Success',
