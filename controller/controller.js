@@ -23,7 +23,7 @@ exports.path = (req, res) => {
 const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: {
-		fileSize: 5 * 1024 * 1024 // max file 5 MB
+		fileSize: 2 * 1024 * 1024 // max file 5 MB
 	}
 });
 
@@ -36,7 +36,7 @@ exports.register = (req, res) => {
 			});
 		}
 
-		const { name, password, minat_genre, email, username } = req.body;
+		const { name, password, email, username } = req.body;
 
 		if (!email || !password) {
 			return res.status(400).json({
@@ -48,7 +48,7 @@ exports.register = (req, res) => {
 		const user_id = nanoid(8);
 		const image = req.file ? req.file.originalname : '';
 
-		const sql = `insert into user (user_id, name, password, minat_genre, username, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${minat_genre}', '${username}', '${image}', '${email}')`;
+		const sql = `insert into user (user_id, name, password, username, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${username}', '${image}', '${email}')`;
 
 		try {
 			if (req.file) {
@@ -199,38 +199,118 @@ exports.profile = (req, res) => {
 
 //belom valid
 exports.editProfile = (req, res) => {
-	const userId = req.userId
-	const { nama, minat_genre } = req.body
-
-	const sql = `update user set name = '${nama}', minat_genre = '${minat_genre}' where user_id = '${userId}'`
-
-	db.query(sql, (err, fields) => {
-		if (err) return res.status(500).json({
-			statusCode: 'Fail',
-			message: err.message
-		})
-
-		const data = {
-			id: req.userId,
-			name: nama,
-			minat_genre: minat_genre
+	upload.single('image')(req, res, async function (err) {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
 		}
 
-		const payload = {
-			id: req.userId,
-			name: nama
+		const userId = req.userId
+
+		// const getSql = `select user_id, name, username, image from user where user_id = '${userId}'`
+
+		// db.query(getSql, async (err, fields) => {
+		// 	if (err) return res.status(500).json({
+		// 		statusCode: 'Fail',
+		// 		message: err.message
+		// 	})
+
+		// 	let updateImage = fields.image
+
+		// 	if (req.file) {
+		// 		try {
+		// 			await bucket.file(updateImage).delete()
+		// 		} catch (err) {
+		// 			return res.status(400).json({
+		// 				statusCode: 'fail',
+		// 				message: err.message
+		// 			});
+		// 		}
+		// 	}
+
+		// 	res.status(201).json({
+		// 		statusCode: 'Success',
+		// 		message: 'Data sebelum di edit',
+		// 		fields,
+		// 		token
+		// 	})
+		// })
+		// hadehhh ~~~~~~~~~~~~~~~~
+
+		// update data breee
+		const { name, username } = req.body
+		const image = req.file ? req.file.originalname : '';
+		const sql = `update user set name = '${name}', username = '${username}', image = '${image}' where user_id = '${userId}'`
+
+		try {
+
+			if (req.file) {
+				try {
+					const save = bucket.file(req.file.originalname);
+					const saveToBucket = save.createWriteStream({
+						resumable: false
+					});
+
+					saveToBucket.on('error', err => {
+						throw new Error(err.message);
+					});
+
+					const uploadFinished = new Promise((resolve, reject) => {
+						saveToBucket.on('finish', resolve);
+						saveToBucket.on('error', reject);
+					});
+
+					saveToBucket.end(req.file.buffer);
+
+					await uploadFinished
+				} catch (err) {
+					return res.status(400).json({
+						statusCode: 'fail',
+						message: err.message
+					});
+				}
+			}
+
+			db.query(sql, (err, fields) => {
+				if (err) return res.status(500).json({
+					statusCode: 'fail',
+					message: err.message
+				})
+
+				if (fields.affectedRows) {
+					const data = {
+						isSucces: fields.affectedRows,
+						id: req.userId
+					};
+
+					const payload = {
+						id: req.userId,
+						name: name,
+						email: req.email
+					};
+
+					const token = jwt.sign(payload, 'jwtrahasia', {
+						expiresIn: 86400 // aktif selama 24 jam
+					});
+
+					res.status(201).json({
+						data,
+						statusCode: 'Success',
+						message: 'data setelah di edit',
+						auth: true,
+						token: token
+					});
+				}
+
+			})
+		} catch (err) {
+			res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
 		}
-
-		const token = jwt.sign(payload, 'jwtrahasia', {
-			expiresIn: 86400 // aktif selama 24 jam 
-		});
-
-		res.status(201).json({
-			statusCode: 'Success',
-			message: 'Data berhasil di edit',
-			data,
-			token
-		})
 	})
 }
 
