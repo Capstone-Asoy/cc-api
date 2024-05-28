@@ -314,6 +314,7 @@ exports.editProfile = (req, res) => {
 	})
 }
 
+// belom connect ke machine learning
 exports.getBook = (req, res) => {
 	const sql = `select * from books`
 
