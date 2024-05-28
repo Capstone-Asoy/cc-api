@@ -353,3 +353,7 @@ exports.filtering = (req, res) => {
 		})
 	})
 }
+
+exports.addRating = (req, res) => {
+	
+}
