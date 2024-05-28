@@ -355,5 +355,25 @@ exports.filtering = (req, res) => {
 }
 
 exports.addRating = (req, res) => {
+	const {rating, review} = req.body
+	const {books_id} = req.query
+	const userId = req.userId
+	const rating_id = nanoid(8);
 
+
+	const sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
+
+	db.query(sql, (err, fields) => {
+		if (err) return res.status(500).json({
+			statusCode: 'fail',
+			message: err.message
+		})
+
+		res.status(201).json({
+			statusCode: 'Success',
+			userId: userId,
+			books : books_id,
+			message: "Data berhasil ditambahkan (menggunakan query)",
+		})
+	})
 }
