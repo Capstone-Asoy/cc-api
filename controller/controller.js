@@ -23,7 +23,7 @@ exports.path = (req, res) => {
 const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: {
-		fileSize: 2 * 1024 * 1024 // max file 5 MB
+		fileSize: 2 * 1024 * 1024 // max file 2 MB
 	}
 });
 
@@ -355,5 +355,5 @@ exports.filtering = (req, res) => {
 }
 
 exports.addRating = (req, res) => {
-	
+
 }
