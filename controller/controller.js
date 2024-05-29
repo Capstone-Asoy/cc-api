@@ -173,10 +173,14 @@ exports.profile = (req, res) => {
 	const userId = req.userId
 
 	const sql = `select u.name, u.username, u.image, 
-                  count (b.bookmark_id) as reading_list
+                  count (b.bookmark_id) as reading_list,
+				  group_concat(distinct bk.judul separator ', ') as list_judul,
+				  group_concat(bk.image separator ', ') as list_image
 				from user u
-				left join bookmarks b on u.user_id = b.user_id
-				where u.user_id = '${userId}'`
+				join bookmarks b on u.user_id = b.user_id
+				join books bk on bk.books_id = b.book_id
+				where u.user_id = '${userId}'
+				group by u.name, u.username, u.image`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -189,7 +193,7 @@ exports.profile = (req, res) => {
 		//    id: req.userId,
 		//    name: req.name
 		// }
-		res.status(201).json({
+		res.status(200).json({
 			statusCode: 'Success',
 			message: 'Data user berhasil ditampilkan',
 			data: fields
