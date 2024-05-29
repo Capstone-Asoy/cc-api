@@ -315,23 +315,23 @@ exports.editProfile = (req, res) => {
 }
 
 // belom connect ke machine learning
-exports.getBook = (req, res) => {
-	const sql = `select * from books`
+// exports.getBook = (req, res) => {
+// 	const sql = `select * from books`
 
-	db.query(sql, (err, fields) => {
-		if (err) return res.status(500).json({
-			statusCode: 'Fail',
-			message: err.message
-		})
+// 	db.query(sql, (err, fields) => {
+// 		if (err) return res.status(500).json({
+// 			statusCode: 'Fail',
+// 			message: err.message
+// 		})
 
-		// console.log(fields);
-		res.status(200).json({
-			statusCode: 'Success',
-			message: "Data berhasil ditampilkan",
-			data: { fields }
-		})
-	})
-}
+// 		// console.log(fields);
+// 		res.status(200).json({
+// 			statusCode: 'Success',
+// 			message: "Data berhasil ditampilkan",
+// 			data: { fields }
+// 		})
+// 	})
+// }
 
 exports.filtering = (req, res) => {
 	const { genre } = req.query
