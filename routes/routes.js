@@ -12,5 +12,6 @@ router.put('/editProfile', cekToken, controller.editProfile);
 router.post('/detailBook/addRating', cekToken, controller.addRating);
 // router.get('/getBooks', cekToken, controller.getBook);
 router.get('/filter', cekToken, controller.filtering);
+router.get('/getHistory', cekToken, controller.getHistory);
 
 module.exports = router;

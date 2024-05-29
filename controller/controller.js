@@ -378,3 +378,25 @@ exports.addRating = (req, res) => {
 		})
 	})
 }
+
+exports.getHistory = (req, res) => {
+	const userId = req.userId
+
+	const sql = `select b.judul, b.image, b.books_id 
+					from books b 
+					join history h on h.book_id = b.books_id
+					where user_id = '${userId}'`
+
+	db.query(sql, (err, fields) => {
+		if (err) return res.status(500).json({
+			statusCode: 'fail',
+			message: err.message
+		})
+
+		res.status(200).json({
+			statusCode: 'Success',
+			message: "Data berhasil ditampilkan (menggunakan query)",
+			books : fields,
+		})
+	})
+}
