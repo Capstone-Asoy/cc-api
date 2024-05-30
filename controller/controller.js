@@ -28,7 +28,7 @@ const upload = multer({
 });
 
 exports.register = (req, res) => {
-	upload.single('image')(req, res, async function (err) {
+	upload.single('image')(req, res, function (err) {
 		if (err) {
 			return res.status(500).json({
 				statusCode: 'Fail',
@@ -47,7 +47,7 @@ exports.register = (req, res) => {
 
 		const cek = `select name, username, email from user`
 
-		db.query(cek, (err, fields) => {
+		db.query(cek, async (err, fields) => {
 			if (err) {
 				return res.status(500).json({
 					statusCode: 'Fail',
@@ -78,76 +78,76 @@ exports.register = (req, res) => {
 					message: 'email telah digunakan'
 				})
 			}
-		})
 
-		const hashPass = bcrypt.hashSync(password, 5);
-		const user_id = nanoid(8);
-		const image = req.file ? req.file.originalname : '';
+			const hashPass = bcrypt.hashSync(password, 5);
+			const user_id = nanoid(8);
+			const image = req.file ? req.file.originalname : '';
 
-		const sql = `insert into user (user_id, name, password, username, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${username}', '${image}', '${email}')`;
+			const sql = `insert into user (user_id, name, password, username, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${username}', '${image}', '${email}')`;
 
-		try {
-			if (req.file) {
-				const save = bucket.file(req.file.originalname);
-				const saveToBucket = save.createWriteStream({
-					resumable: false
-				});
+			try {
+				if (req.file) {
+					const save = bucket.file(req.file.originalname);
+					const saveToBucket = save.createWriteStream({
+						resumable: false
+					});
 
-				saveToBucket.on('error', err => {
-					throw new Error(err.message);
-				});
+					saveToBucket.on('error', err => {
+						throw new Error(err.message);
+					});
 
-				const uploadFinished = new Promise((resolve, reject) => {
-					saveToBucket.on('finish', resolve);
-					saveToBucket.on('error', reject);
-				});
+					const uploadFinished = new Promise((resolve, reject) => {
+						saveToBucket.on('finish', resolve);
+						saveToBucket.on('error', reject);
+					});
 
-				saveToBucket.end(req.file.buffer);
+					saveToBucket.end(req.file.buffer);
 
-				await uploadFinished
+					await uploadFinished
 
 
-				db.query(sql, (err, fields) => {
-					if (err) {
-						return res.status(500).json({
-							statusCode: 'Fail',
-							// message: err.message
-							message: 'Gagal register!'
-						});
-					}
+					db.query(sql, (err, fields) => {
+						if (err) {
+							return res.status(500).json({
+								statusCode: 'Fail',
+								// message: err.message
+								message: 'Gagal register!'
+							});
+						}
 
-					if (fields.affectedRows) {
-						const data = {
-							isSucces: fields.affectedRows,
-							id: user_id
-						};
+						if (fields.affectedRows) {
+							const data = {
+								isSucces: fields.affectedRows,
+								id: user_id
+							};
 
-						const payload = {
-							id: user_id,
-							name: name,
-							email: email
-						};
+							const payload = {
+								id: user_id,
+								name: name,
+								email: email
+							};
 
-						const token = jwt.sign(payload, 'jwtrahasia', {
-							expiresIn: 86400 // aktif selama 24 jam
-						});
+							const token = jwt.sign(payload, 'jwtrahasia', {
+								expiresIn: 86400 // aktif selama 24 jam
+							});
 
-						res.status(201).json({
-							data,
-							statusCode: 'Success',
-							message: 'Register berhasil bang',
-							auth: true,
-							token: token
-						});
-					}
+							return res.status(201).json({
+								data,
+								statusCode: 'Success',
+								message: 'Register berhasil bang',
+								auth: true,
+								token: token
+							});
+						}
+					});
+				}
+			} catch (err) {
+				res.status(500).json({
+					statusCode: 'Fail',
+					message: err.message
 				});
 			}
-		} catch (err) {
-			res.status(500).json({
-				statusCode: 'Fail',
-				message: err.message
-			});
-		}
+		})
 	})
 }
 
@@ -405,8 +405,8 @@ exports.filtering = (req, res) => {
 }
 
 exports.addRating = (req, res) => {
-	const {rating, review} = req.body
-	const {books_id} = req.query
+	const { rating, review } = req.body
+	const { books_id } = req.query
 	const userId = req.userId
 	const rating_id = nanoid(8);
 
@@ -428,7 +428,7 @@ exports.addRating = (req, res) => {
 		res.status(201).json({
 			statusCode: 'Success',
 			userId: userId,
-			books : books_id,
+			books: books_id,
 			message: "Data berhasil ditambahkan (menggunakan query)",
 		})
 	})
@@ -451,7 +451,7 @@ exports.getHistory = (req, res) => {
 		res.status(200).json({
 			statusCode: 'Success',
 			message: "Data berhasil ditampilkan (menggunakan query)",
-			books : fields,
+			books: fields,
 		})
 	})
 }
