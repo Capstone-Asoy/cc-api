@@ -38,11 +38,47 @@ exports.register = (req, res) => {
 
 		const { name, password, email, username } = req.body;
 
-		if (!email || !password) {
+		if (!email || !password || !name || !username) {
 			return res.status(400).json({
-				message: 'Email and password masih kosong!'
+				statusCode: 'fail',
+				message: 'Mohon lengkapi data anda!'
 			});
 		}
+
+		const cek = `select name, username, email from user`
+
+		db.query(cek, (err, fields) => {
+			if (err) {
+				return res.status(500).json({
+					statusCode: 'Fail',
+					message: err.message
+				});
+			}
+
+			const cekName = fields.some(user => user.name === name)
+			if (cekName) {
+				return res.status(400).json({
+					statusCode: 'fail',
+					message: 'nama telah digunakan'
+				})
+			}
+
+			const cekUsername = fields.some(user => user.username === username)
+			if (cekUsername) {
+				return res.status(400).json({
+					statusCode: 'fail',
+					message: 'username telah digunakan'
+				})
+			}
+
+			const cekEmail = fields.some(user => user.email === email)
+			if (cekEmail) {
+				return res.status(400).json({
+					statusCode: 'fail',
+					message: 'email telah digunakan'
+				})
+			}
+		})
 
 		const hashPass = bcrypt.hashSync(password, 5);
 		const user_id = nanoid(8);
@@ -75,7 +111,8 @@ exports.register = (req, res) => {
 					if (err) {
 						return res.status(500).json({
 							statusCode: 'Fail',
-							message: err.message
+							// message: err.message
+							message: 'Gagal register!'
 						});
 					}
 
@@ -120,6 +157,7 @@ exports.login = (req, res) => {
 
 	if (!email || !password) {
 		return res.status(400).json({
+			statusCode: 'fail',
 			message: 'email dan password diperlukan'
 		})
 	}
@@ -129,7 +167,8 @@ exports.login = (req, res) => {
 	db.query(sql, (err, data) => {
 		if (err) return res.status(500).json({
 			statusCode: 'Fail',
-			message: err.message
+			// message: err.message
+			message: 'Gagal login!'
 		})
 
 		if (data.length === 0) return res.status(404).json({
@@ -173,7 +212,7 @@ exports.profile = (req, res) => {
 	const userId = req.userId
 
 	const sql = `select u.name, u.username, u.image, 
-                  count (b.bookmark_id) as reading_list,
+                  count(b.bookmark_id) as reading_list,
 				  group_concat(distinct bk.judul separator ', ') as list_judul,
 				  group_concat(bk.image separator ', ') as list_image
 				from user u
@@ -186,6 +225,7 @@ exports.profile = (req, res) => {
 		if (err) return res.status(500).json({
 			statusCode: 'Fail',
 			message: err.message
+			// message: 'Gagal menampilkan profile anda!'
 		})
 
 		// console.log("data berhasil ditambahkans");
@@ -302,7 +342,7 @@ exports.editProfile = (req, res) => {
 					res.status(201).json({
 						data,
 						statusCode: 'Success',
-						message: 'data setelah di edit',
+						message: 'Data Berhasil di edit',
 						auth: true,
 						token: token
 					});
@@ -350,7 +390,12 @@ exports.filtering = (req, res) => {
 			message: err.message
 		})
 
-		console.log(fields);
+		if (fields.length === 0) return res.status(404).json({
+			statusCode: 'Fail',
+			message: "Buku dengan genre tersebut tidak ditemukan!"
+		})
+
+		// console.log(fields);
 		res.status(200).json({
 			statusCode: 'Success',
 			message: "Data berhasil ditampilkan (menggunakan query)",
@@ -365,6 +410,12 @@ exports.addRating = (req, res) => {
 	const userId = req.userId
 	const rating_id = nanoid(8);
 
+	if (!books_id) {
+		return res.status(500).json({
+			statusCode: 'fail',
+			message: err.message
+		})
+	}
 
 	const sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
 
