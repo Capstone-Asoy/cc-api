@@ -57,7 +57,7 @@ exports.register = (req, res) => {
 
 			const cekName = fields.some(user => user.name === name)
 			if (cekName) {
-				return res.status(400).json({
+				return res.status(409).json({
 					statusCode: 'fail',
 					message: 'nama telah digunakan'
 				})
@@ -65,7 +65,7 @@ exports.register = (req, res) => {
 
 			const cekUsername = fields.some(user => user.username === username)
 			if (cekUsername) {
-				return res.status(400).json({
+				return res.status(409).json({
 					statusCode: 'fail',
 					message: 'username telah digunakan'
 				})
@@ -73,7 +73,7 @@ exports.register = (req, res) => {
 
 			const cekEmail = fields.some(user => user.email === email)
 			if (cekEmail) {
-				return res.status(400).json({
+				return res.status(409).json({
 					statusCode: 'fail',
 					message: 'email telah digunakan'
 				})
@@ -380,9 +380,16 @@ exports.editProfile = (req, res) => {
 exports.filtering = (req, res) => {
 	const { genre } = req.query
 	const userId = req.userId
-	console.log(userId);
+	// console.log(userId);
 
-	const sql = `select * from books where genre like '%${genre}%'`
+	if (!genre) {
+		return res.status(404).json({
+			statusCode: 'fail',
+			message:'Query dibutuhkan!'
+		})
+	}
+
+	const sql = `select books_id, judul, image from books where genre like '%${genre}%'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -411,9 +418,9 @@ exports.addRating = (req, res) => {
 	const rating_id = nanoid(8);
 
 	if (!books_id) {
-		return res.status(500).json({
+		return res.status(404).json({
 			statusCode: 'fail',
-			message: err.message
+			message: 'books_id diperlukan'
 		})
 	}
 
@@ -428,7 +435,7 @@ exports.addRating = (req, res) => {
 		res.status(201).json({
 			statusCode: 'Success',
 			userId: userId,
-			books: books_id,
+			books_id: books_id,
 			message: "Data berhasil ditambahkan (menggunakan query)",
 		})
 	})
