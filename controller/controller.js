@@ -385,7 +385,7 @@ exports.filtering = (req, res) => {
 	if (!genre) {
 		return res.status(404).json({
 			statusCode: 'fail',
-			message:'Query dibutuhkan!'
+			message: 'Query dibutuhkan!'
 		})
 	}
 
@@ -397,7 +397,7 @@ exports.filtering = (req, res) => {
 			message: err.message
 		})
 
-		if (fields.length === 0) return res.status(404).json({
+		if (fields.length === 0) return res.status(400).json({
 			statusCode: 'Fail',
 			message: "Buku dengan genre tersebut tidak ditemukan!"
 		})
@@ -417,6 +417,13 @@ exports.addRating = (req, res) => {
 	const userId = req.userId
 	const rating_id = nanoid(8);
 
+	if (!rating || !review) {
+		return res.status(406).json({
+			statusCode: 'fail',
+			message: 'Mohon lengkapi feedback'
+		})
+	}
+
 	if (!books_id) {
 		return res.status(404).json({
 			statusCode: 'fail',
@@ -424,21 +431,37 @@ exports.addRating = (req, res) => {
 		})
 	}
 
-	const sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
+	const cek = `select books_id from books`
 
-	db.query(sql, (err, fields) => {
-		if (err) return res.status(500).json({
-			statusCode: 'fail',
-			message: err.message
-		})
+	db.query(cek, (err, fields) => {
+		const cekBookId = fields.some(book => book.books_id === books_id)
+		if (!cekBookId) {
+			return res.status(409).json({
+				statusCode: 'fail',
+				message: 'ID Buku tidak ditemukan!'
+			})
+		}
 
-		res.status(201).json({
-			statusCode: 'Success',
-			userId: userId,
-			books_id: books_id,
-			message: "Data berhasil ditambahkan (menggunakan query)",
+		
+
+		const sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
+
+		db.query(sql, (err, fields) => {
+			if (err) return res.status(500).json({
+				statusCode: 'fail',
+				message: err.message
+			})
+
+			res.status(201).json({
+				statusCode: 'Success',
+				userId: userId,
+				books_id: books_id,
+				message: "Data berhasil ditambahkan",
+			})
 		})
 	})
+
+
 }
 
 exports.getHistory = (req, res) => {
@@ -457,7 +480,7 @@ exports.getHistory = (req, res) => {
 
 		res.status(200).json({
 			statusCode: 'Success',
-			message: "Data berhasil ditampilkan (menggunakan query)",
+			message: "Data berhasil ditampilkan",
 			books: fields,
 		})
 	})
