@@ -13,5 +13,6 @@ router.post('/detailBook/addRating', cekToken, controller.addRating);
 // router.get('/getBooks', cekToken, controller.getBook);
 router.get('/filter', controller.filtering);
 router.get('/getHistory', cekToken, controller.getHistory);
+router.patch('/change-password', cekToken, controller.chgPass);
 
 module.exports = router;
