@@ -114,8 +114,7 @@ exports.register = (req, res) => {
 						if (err) {
 							return res.status(500).json({
 								statusCode: 'Fail',
-								// message: err.message
-								message: 'Gagal register!'
+								message: err.message
 							});
 						}
 
@@ -220,8 +219,8 @@ exports.profile = (req, res) => {
 				  group_concat(distinct bk.judul separator ', ') as list_judul,
 				  group_concat(bk.image separator ', ') as list_image
 				from user u
-				join bookmarks b on u.user_id = b.user_id
-				join books bk on bk.books_id = b.book_id
+				left join bookmarks b on u.user_id = b.user_id
+				left join books bk on bk.books_id = b.book_id
 				where u.user_id = '${userId}'
 				group by u.name, u.username, u.image`
 
@@ -232,11 +231,6 @@ exports.profile = (req, res) => {
 			// message: 'Gagal menampilkan profile anda!'
 		})
 
-		// console.log("data berhasil ditambahkans");
-		// const data = {
-		//    id: req.userId,
-		//    name: req.name
-		// }
 		res.status(200).json({
 			statusCode: 'Success',
 			message: 'Data user berhasil ditampilkan',
