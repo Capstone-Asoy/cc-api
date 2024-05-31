@@ -36,16 +36,16 @@ exports.register = (req, res) => {
 			});
 		}
 
-		const { name, password, email, username } = req.body;
+		const { name, password, email } = req.body;
 
-		if (!email || !password || !name || !username) {
+		if (!email || !password || !name) {
 			return res.status(400).json({
 				statusCode: 'fail',
 				message: 'Mohon lengkapi data anda!'
 			});
 		}
 
-		const cek = `select name, username, email from user`
+		const cek = `select name, email from user`
 
 		db.query(cek, async (err, fields) => {
 			if (err) {
@@ -60,14 +60,6 @@ exports.register = (req, res) => {
 				return res.status(409).json({
 					statusCode: 'fail',
 					message: 'nama telah digunakan'
-				})
-			}
-
-			const cekUsername = fields.some(user => user.username === username)
-			if (cekUsername) {
-				return res.status(409).json({
-					statusCode: 'fail',
-					message: 'username telah digunakan'
 				})
 			}
 
@@ -108,7 +100,7 @@ exports.register = (req, res) => {
 
 					const publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
 
-					const sql = `insert into user (user_id, name, password, username, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${username}', '${publicUrl}', '${email}')`;
+					const sql = `insert into user (user_id, name, password, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}')`;
 
 					db.query(sql, (err, fields) => {
 						if (err) {
@@ -214,7 +206,7 @@ exports.logout = (req, res) => {
 exports.profile = (req, res) => {
 	const userId = req.userId
 
-	const sql = `select u.name, u.username, u.image, 
+	const sql = `select u.name, u.email, u.image, 
                   count(b.bookmark_id) as reading_list,
 				  group_concat(distinct bk.judul separator ', ') as list_judul,
 				  group_concat(bk.image separator ', ') as list_image
@@ -222,7 +214,7 @@ exports.profile = (req, res) => {
 				left join bookmarks b on u.user_id = b.user_id
 				left join books bk on bk.books_id = b.book_id
 				where u.user_id = '${userId}'
-				group by u.name, u.username, u.image`
+				group by u.name, u.email, u.image`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -282,9 +274,10 @@ exports.editProfile = (req, res) => {
 		// hadehhh ~~~~~~~~~~~~~~~~
 
 		// update data breee
-		const { name, username, email } = req.body
+		const { name, email } = req.body
 		// const image = req.file ? req.file.originalname : '';
 
+		let publicUrl = ''
 		if (req.file) {
 			try {
 				const save = bucket.file(req.file.originalname);
@@ -306,42 +299,9 @@ exports.editProfile = (req, res) => {
 				await uploadFinished
 				await save.makePublic()
 
-				const publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
+				publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
 
-				const sql = `update user set name = '${name}', username = '${username}', email = '${email}', image = '${publicUrl}' where user_id = '${userId}'`
 
-				db.query(sql, (err, fields) => {
-					if (err) return res.status(500).json({
-						statusCode: 'fail',
-						message: err.message
-					})
-
-					if (fields.affectedRows) {
-						const data = {
-							isSucces: fields.affectedRows,
-							id: req.userId
-						};
-
-						const payload = {
-							id: req.userId,
-							name: name,
-							email: email
-						};
-
-						const token = jwt.sign(payload, 'jwtrahasia', {
-							expiresIn: 86400 // aktif selama 24 jam
-						});
-
-						res.status(201).json({
-							data,
-							statusCode: 'Success',
-							message: 'Data Berhasil di edit',
-							auth: true,
-							token: token
-						});
-					}
-
-				})
 			} catch (err) {
 				return res.status(400).json({
 					statusCode: 'fail',
@@ -349,6 +309,46 @@ exports.editProfile = (req, res) => {
 				});
 			}
 		}
+		let sql = ''
+
+		if (publicUrl !== '') {
+			sql = `update user set name = '${name}', email = '${email}', image = '${publicUrl}' where user_id = '${userId}'`
+		} else {
+			sql = `update user set name = '${name}', email = '${email}' where user_id = '${userId}'`
+		}
+
+		db.query(sql, (err, fields) => {
+			if (err) return res.status(500).json({
+				statusCode: 'fail',
+				message: err.message
+			})
+
+			if (fields.affectedRows) {
+				const data = {
+					isSucces: fields.affectedRows,
+					id: req.userId
+				};
+
+				const payload = {
+					id: req.userId,
+					name: name,
+					email: email
+				};
+
+				const token = jwt.sign(payload, 'jwtrahasia', {
+					expiresIn: 86400 // aktif selama 24 jam
+				});
+
+				res.status(201).json({
+					data,
+					statusCode: 'Success',
+					message: 'Data Berhasil di edit',
+					auth: true,
+					token: token
+				});
+			}
+
+		})
 	})
 }
 
@@ -439,9 +439,11 @@ exports.addRating = (req, res) => {
 		const cekUser = `select user_id from rating`
 
 		db.query(cekUser, (err, fields) => {
-			const udahAda = fields.length > 0
+			const udahAda = fields.some(rating => rating.user_id === userId)
+
 			let sql
 			if (udahAda) {
+				console.log(userId, 'udah ada: ' + udahAda);
 				sql = `update rating set rating = '${rating}', review = '${review}' where user_id = '${userId}'`
 			} else {
 				sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
