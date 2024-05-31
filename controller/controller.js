@@ -83,7 +83,6 @@ exports.register = (req, res) => {
 			const user_id = nanoid(8);
 			const image = req.file ? req.file.originalname : '';
 
-			const sql = `insert into user (user_id, name, password, username, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${username}', '${image}', '${email}')`;
 
 			try {
 				if (req.file) {
@@ -105,6 +104,11 @@ exports.register = (req, res) => {
 
 					await uploadFinished
 
+					await save.makePublic()
+
+					const publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
+
+					const sql = `insert into user (user_id, name, password, username, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${username}', '${publicUrl}', '${email}')`;
 
 					db.query(sql, (err, fields) => {
 						if (err) {
@@ -284,9 +288,9 @@ exports.editProfile = (req, res) => {
 		// hadehhh ~~~~~~~~~~~~~~~~
 
 		// update data breee
-		const { name, username } = req.body
+		const { name, username, email } = req.body
 		const image = req.file ? req.file.originalname : '';
-		const sql = `update user set name = '${name}', username = '${username}', image = '${image}' where user_id = '${userId}'`
+		const sql = `update user set name = '${name}', username = '${username}', email = '${email}', image = '${image}' where user_id = '${userId}'`
 
 		try {
 

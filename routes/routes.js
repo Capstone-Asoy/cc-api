@@ -8,7 +8,7 @@ router.post('/register', controller.register);
 router.post('/login', controller.login);
 router.post('/logout', controller.logout);
 router.get('/profile', cekToken, controller.profile);
-router.put('/editProfile', cekToken, controller.editProfile);
+router.put('/me', cekToken, controller.editProfile);
 router.post('/detailBook/addRating', cekToken, controller.addRating);
 // router.get('/getBooks', cekToken, controller.getBook);
 router.get('/filter', cekToken, controller.filtering);
