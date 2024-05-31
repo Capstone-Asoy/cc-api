@@ -415,7 +415,7 @@ exports.addRating = (req, res) => {
 	const { rating, review } = req.body
 	const { books_id } = req.query
 	const userId = req.userId
-	const rating_id = nanoid(8);
+	const rating_id = nanoid(8)
 
 	if (!rating || !review) {
 		return res.status(406).json({
@@ -442,26 +442,32 @@ exports.addRating = (req, res) => {
 			})
 		}
 
-		
+		const cekUser = `select user_id from rating`
 
-		const sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
+		db.query(cekUser, (err, fields) => {
+			const udahAda = fields.length  > 0
+			let sql
+			if (udahAda) {
+				sql = `update rating set rating = '${rating}', review = '${review}' where user_id = '${userId}'`
+			} else {
+				sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
+			}
 
-		db.query(sql, (err, fields) => {
-			if (err) return res.status(500).json({
-				statusCode: 'fail',
-				message: err.message
-			})
-
-			res.status(201).json({
-				statusCode: 'Success',
-				userId: userId,
-				books_id: books_id,
-				message: "Data berhasil ditambahkan",
+			db.query(sql, (err, fields) => {
+				if (err) return res.status(500).json({
+					statusCode: 'fail',
+					message: err.message
+				})
+	
+				res.status(201).json({
+					statusCode: 'Success',
+					userId: userId,
+					books_id: books_id,
+					message:udahAda ? "Data berhasil diperbarui" : "Data berhasil ditambahkan",
+				})
 			})
 		})
 	})
-
-
 }
 
 exports.getHistory = (req, res) => {
