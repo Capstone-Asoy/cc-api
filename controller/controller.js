@@ -99,8 +99,9 @@ exports.register = (req, res) => {
 					await save.makePublic()
 
 					const publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
+					const isNewAcc = true
 
-					const sql = `insert into user (user_id, name, password, image, email) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}')`;
+					const sql = `insert into user (user_id, name, password, image, email, isNewAcc) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}', '${isNewAcc}')`;
 
 					db.query(sql, (err, fields) => {
 						if (err) {
