@@ -786,8 +786,10 @@ exports.getGenres = (req, res) => {
             }
         });
 
+		let sortedGenres = Array.from(genres).sort();
+
         res.status(200).json({
-            genres: Array.from(genres)
+            genres: sortedGenres
         });
     });
 };
