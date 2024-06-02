@@ -392,7 +392,8 @@ exports.filtering = (req, res) => {
 		})
 	}
 
-	const sql = `select books_id, judul, image from books where genre like '%${genre}%'`
+	const sql = `select books_id, judul, image from books where genre like '%${genre}%' 
+					and (genre like '${genre}, %' or genre like '%, ${genre}' or genre like '%, ${genre}, %' or genre = '${genre}')`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -409,7 +410,7 @@ exports.filtering = (req, res) => {
 		res.status(200).json({
 			statusCode: 'Success',
 			message: "Data berhasil ditampilkan (menggunakan query)",
-			data: { fields }
+			fields
 		})
 	})
 }
