@@ -478,7 +478,7 @@ exports.addRating = (req, res) => {
 exports.getHistory = (req, res) => {
 	const userId = req.userId
 
-	const sql = `select b.judul, b.image, b.books_id 
+	const sql = `select distinct b.judul, b.image, b.books_id 
 					from books b 
 					join history h on h.book_id = b.books_id
 					where user_id = '${userId}'`
@@ -563,7 +563,10 @@ exports.detailBook = (req, res) => {
 
             db.query(sql2, (err) => {
                 if (err) {
-                    console.error('Error inserting into history: ', err.message || 'Unknown error');
+                    res.status(500).json({
+						statusCode: 'fail',
+						message: err.message
+					})
                 }
             });
         }
