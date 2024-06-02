@@ -6,7 +6,7 @@ function cekToken(req, res, next) {
 
     if (!authorization) {
         req.terautentikasi = false
-        return res.status(403).json({ statusCode: 'fail', message: 'Autentikasi dibutuhkan' });
+        return res.status(401).json({ statusCode: 'fail', message: 'Autentikasi dibutuhkan' });
     }
 
     const token = authorization.split(' ')[1]
