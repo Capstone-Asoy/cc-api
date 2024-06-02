@@ -654,13 +654,6 @@ exports.deleteBookmark = (req, res) => {
 exports.getBookmarks = (req, res) => {
     const userId = req.userId;
 
-    if (!userId) {
-        return res.status(401).json({
-            statusCode: 'Fail',
-            message: 'Pengguna tidak terautentikasi'
-        });
-    }
-
     const sql = `
         SELECT bk.bookmark_id, b.judul, b.image, b.penulis 
         FROM bookmarks bk
