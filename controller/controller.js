@@ -234,7 +234,8 @@ exports.profile = (req, res) => {
 			image: user.image,
 			reading_list: user.reading_list,
 			list_judul: user.list_judul ? user.list_judul.split(',').map(list_judul => list_judul.trim()) : [],
-			list_image: user.list_image
+			list_image: user.list_image ? user.list_image.split(',').map(list_image => list_image.trim()) : [],
+			// list_image: user.list_image
 		})
 	})
 }
