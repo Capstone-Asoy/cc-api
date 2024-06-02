@@ -490,7 +490,7 @@ exports.getHistory = (req, res) => {
 		res.status(200).json({
 			statusCode: 'Success',
 			message: "Data berhasil ditampilkan",
-			books: fields,
+			fields,
 		})
 	})
 }
