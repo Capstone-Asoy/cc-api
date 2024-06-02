@@ -224,10 +224,17 @@ exports.profile = (req, res) => {
 			// message: 'Gagal menampilkan profile anda!'
 		})
 
+		const user = fields[0]
+
 		res.status(200).json({
 			statusCode: 'Success',
 			message: 'Data user berhasil ditampilkan',
-			data: fields
+			name: user.name,
+			email: user.email,
+			image: user.image,
+			reading_list: user.reading_list,
+			list_judul: user.list_judul ? user.list_judul.split(',').map(list_judul => list_judul.trim()) : [],
+			list_image: user.list_image
 		})
 	})
 }
@@ -519,7 +526,7 @@ exports.detailBook = (req, res) => {
         if (err) {
             return res.status(500).json({
                 statusCode: 'Fail',
-                message: err.message
+                message: err.message || 'Unknown error'
             });
         }
 
@@ -531,17 +538,8 @@ exports.detailBook = (req, res) => {
         }
 
         const book = result[0];
-
-		if (req.terautentikasi) {
-			const history_id = nanoid(8)
-			const sql2 = `insert into history (history_id, user_id, book_id) values ('${history_id}', '${req.userId}', '${book.books_id}')`
-	
-			db.query(sql2, (err, fields) => {
-				
-			})
-		}
-
-        res.status(200).json({
+        
+        const response = {
             bookId: book.books_id,
             title: book.judul,
             synopsis: book.deskripsi,
@@ -553,10 +551,21 @@ exports.detailBook = (req, res) => {
             genre: book.genre ? book.genre.split(',').map(genre => genre.trim()) : [],
             coverImage: book.image,
             avgRating: book.avg_rating
-        });
-    });
+        };
 
-		
+        res.status(200).json(response);
+
+        if (req.terautentikasi) {
+            const history_id = nanoid(8);
+            const sql2 = `insert into history (history_id, user_id, book_id) values ('${history_id}', '${req.userId}', '${book.books_id}')`;
+
+            db.query(sql2, (err) => {
+                if (err) {
+                    console.error('Error inserting into history: ', err.message || 'Unknown error');
+                }
+            });
+        }
+    });
 };
 
 exports.addBookmark = (req, res) => {
