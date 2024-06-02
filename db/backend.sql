@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 25, 2024 at 01:00 PM
+-- Generation Time: May 29, 2024 at 04:43 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -30,8 +30,20 @@ SET time_zone = "+00:00";
 CREATE TABLE `bookmarks` (
   `bookmark_id` varchar(255) NOT NULL,
   `user_id` varchar(255) DEFAULT NULL,
-  `book_id` varchar(255) DEFAULT NULL
+  `book_id` varchar(255) DEFAULT NULL,
+  `time` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `bookmarks`
+--
+
+INSERT INTO `bookmarks` (`bookmark_id`, `user_id`, `book_id`, `time`) VALUES
+('dua', 'FeVOO7kJ', '3', '2024-05-26 02:01:46'),
+('empat', 'gWq79lHH', '3', '2024-05-26 02:01:46'),
+('lima', 'gWq79lHH', '4', '2024-05-26 02:03:38'),
+('satu', 'FeVOO7kJ', '1', '2024-05-26 02:01:46'),
+('tiga', 'gWq79lHH', '5', '2024-05-26 02:01:46');
 
 -- --------------------------------------------------------
 
@@ -73,8 +85,18 @@ CREATE TABLE `history` (
   `history_id` varchar(255) NOT NULL,
   `user_id` varchar(255) NOT NULL,
   `book_id` varchar(255) NOT NULL,
-  `time` date NOT NULL
+  `time` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `history`
+--
+
+INSERT INTO `history` (`history_id`, `user_id`, `book_id`, `time`) VALUES
+('dua', 'FeVOO7kJ', '3', '2024-05-26 01:41:21'),
+('empat', 'gWq79lHH', '3', '2024-05-26 01:41:21'),
+('satu', 'FeVOO7kJ', '1', '2024-05-26 01:41:21'),
+('tiga', 'gWq79lHH', '5', '2024-05-26 01:41:21');
 
 -- --------------------------------------------------------
 
@@ -86,22 +108,18 @@ CREATE TABLE `rating` (
   `rating_id` varchar(255) NOT NULL,
   `user_id` varchar(255) DEFAULT NULL,
   `books_id` varchar(255) DEFAULT NULL,
-  `rating` int(11) DEFAULT NULL
+  `rating` int(11) DEFAULT NULL,
+  `review` varchar(255) DEFAULT NULL,
+  `date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
 --
--- Table structure for table `reviews`
+-- Dumping data for table `rating`
 --
 
-CREATE TABLE `reviews` (
-  `review_id` varchar(255) NOT NULL,
-  `user_id` varchar(255) DEFAULT NULL,
-  `books_id` varchar(255) DEFAULT NULL,
-  `isi_review` text DEFAULT NULL,
-  `tanggal` date DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO `rating` (`rating_id`, `user_id`, `books_id`, `rating`, `review`, `date`) VALUES
+('7D08eJoI', 'gWq79lHH', '3', 3, 'yahh lumayan lahh', '2024-05-28 18:51:19'),
+('9PJ9rhno', '10ifHb7k', '3', 4, 'ini bagus banget bjirr lah', '2024-05-28 18:53:00');
 
 -- --------------------------------------------------------
 
@@ -113,25 +131,22 @@ CREATE TABLE `user` (
   `user_id` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `minat_genre` varchar(255) NOT NULL
+  `username` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`user_id`, `name`, `password`, `minat_genre`) VALUES
-('-tROWojb', 'baru', '$2a$05$Sp3C/uWfoLsFNcNthoFyjupBzlhQUOS2oFp9dtlrJBnMzUZ1h.X6K', 'Fantasy'),
-('408GhtRh', 'wiwid', '$2a$05$3z/UvWwk2pDPag.hnRCwU.QWSlct2N9Eh2A7HLbBZ9BsPnaUu6D9C', 'fantasi'),
-('44F_Tcg8', 'erlangga', '$2a$05$L7gkmcvLJWBe03HshiDf4eCNpoUk4hppMwfVvWWXJFXOcuPeBBwX2', 'OverPower'),
-('BpO9Rk-R', 'amri', '$2a$05$z2MaZicKiqcaoijcfhIlT.rU871L3T3Hys7B.a4dGbylCs9XE717C', 'amri'),
-('dOY7Brcz', 'yolaa', '$2a$05$Ap87Gtm6cwlbq2TpI52cwOzzanLwXHISDkJ2mL5HVsUznAfIWcYS2', 'Voly'),
-('iDms6hXM', 'viola', '$2a$04$cwUnBf7PxYlxojq2UHlU0u0mgPZhgGHY5CoAdEXmS1xlInDaylPcm', 'Music'),
-('jN5LXJ3k', 'amri', '$2a$05$/BwTP5WGTnnBZctPSB6iIOwCfvpolJmp.IaySVQbafc864LOAzhge', 'amri'),
-('rTsp_zER', 'ezra', '$2a$05$OrnO.H0vZGCPAPf.aUy0TOVFWAV9hZDCzKDAfsAGrxZnc/XVCoIcu', 'Main'),
-('Si_jnXq0', 'baru lagi bang', '$2a$05$ADwPvuhNJlpMt2ICXhtpZuuoQKi2ZUlUf/tckD34koiMeHmWk9gmS', 'Rock'),
-('WeznOhYL', 'cynthia', '$2a$05$tzd7ERxyrvMKbKTqbIO20u3tnB7uE3iayu6iqJgtGKOEY8Ef10Ua2', 'FL'),
-('zf8C4eLF', 'tomo', '$2a$05$bSBXig1iKtXaBrOjjuZlOeVJuviXe1TIZKB6A3ucqdaATqf6D9kX6', 'Main');
+INSERT INTO `user` (`user_id`, `name`, `password`, `username`, `image`, `email`) VALUES
+('10ifHb7k', 'freya', '$2a$05$VRG/tt8e9vKfa3BIl8nqEODLklld5KayugGuozo56JkO8yvg0JcL6', 'freya', 'FVkSVDXaIAApP56.jfif', 'freya@gmail.com'),
+('FeVOO7kJ', 'erlangga', '$2a$05$jNI8VptG1b.Tmx36hxPLOO8zqBhHzmuZ440LXKFiFjz06/PU4SdDa', 'erlangga bang', 'grimreaper.jpeg', 'erlangga@gmail.com'),
+('gWq79lHH', 'ezra bucin', '$2a$05$MFKsM3zpEwf6ZQuhHSoC8eKbrPHVZFRMgNGQskOi6SKj4QN4hVGqu', 'ezra bucin', 'owen.jpeg', 'ezra@gmail.com'),
+('hTTDpBrx', 'cepio', '$2a$05$IXig35YHXeWedS8h5ckEDuc1ThI/BdTOKHATwe6d2TwhoPJeLp7bO', 'cepio', 'owen.jpeg', 'freya@gmail.com'),
+('nQebWy8x', 'jayawardana', '$2a$05$1e3auItaTADDYiHbbj945O3ywp3JjxgcLSMuaUTbd5H3iTUc.mgBG', 'jayawardana', '↝????????????????????????.jfif', 'freya@gmail.com'),
+('p5mLb-KP', 'seviola', '$2a$05$AJx/lJusHIlcRzpSMxC4v.OcEQI.VTca3pngFoU6JCsbpOrs8HoWS', 'seviola', 'vinny.jpg', 'piyo@gmail.com');
 
 --
 -- Indexes for dumped tables
@@ -168,14 +183,6 @@ ALTER TABLE `rating`
   ADD KEY `books_id` (`books_id`);
 
 --
--- Indexes for table `reviews`
---
-ALTER TABLE `reviews`
-  ADD PRIMARY KEY (`review_id`),
-  ADD KEY `user_id` (`user_id`),
-  ADD KEY `books_id` (`books_id`);
-
---
 -- Indexes for table `user`
 --
 ALTER TABLE `user`
@@ -205,13 +212,6 @@ ALTER TABLE `history`
 ALTER TABLE `rating`
   ADD CONSTRAINT `rating_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
   ADD CONSTRAINT `rating_ibfk_2` FOREIGN KEY (`books_id`) REFERENCES `books` (`books_id`);
-
---
--- Constraints for table `reviews`
---
-ALTER TABLE `reviews`
-  ADD CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
-  ADD CONSTRAINT `reviews_ibfk_2` FOREIGN KEY (`books_id`) REFERENCES `books` (`books_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
