@@ -754,3 +754,26 @@ exports.chgPass = (req, res) => {
 
 }
 
+exports.getGenres = (req, res) => {
+    const sql = `SELECT DISTINCT genre FROM books`;
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            return res.status(500).json({
+                statusCode: 'Fail',
+                message: err.message
+            });
+        }
+
+        let genres = new Set();
+        results.forEach(row => {
+            if (row.genre) {
+                row.genre.split(',').forEach(genre => genres.add(genre.trim()));
+            }
+        });
+
+        res.status(200).json({
+            genres: Array.from(genres)
+        });
+    });
+};

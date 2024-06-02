@@ -23,5 +23,6 @@ router.get('/filter', controller.filtering);
 router.get('/getHistory', cekToken, controller.getHistory);
 router.patch('/change-password', cekToken, controller.chgPass);
 
+router.get('/genres', controller.getGenres);
 
 module.exports = router;
