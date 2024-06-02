@@ -532,6 +532,15 @@ exports.detailBook = (req, res) => {
 
         const book = result[0];
 
+		if (req.terautentikasi) {
+			const history_id = nanoid(8)
+			const sql2 = `insert into history (history_id, user_id, book_id) values ('${history_id}', '${req.userId}', '${book.books_id}')`
+	
+			db.query(sql2, (err, fields) => {
+				
+			})
+		}
+
         res.status(200).json({
             bookId: book.books_id,
             title: book.judul,
@@ -546,6 +555,8 @@ exports.detailBook = (req, res) => {
             avgRating: book.avg_rating
         });
     });
+
+		
 };
 
 exports.addBookmark = (req, res) => {

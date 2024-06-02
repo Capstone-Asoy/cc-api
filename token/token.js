@@ -5,6 +5,7 @@ function cekToken(req, res, next) {
     const {authorization} = req.headers; // ngambil dari header Authorization
 
     if (!authorization) {
+        req.terautentikasi = false
         return res.status(403).json({ statusCode: 'fail', message: 'Autentikasi dibutuhkan' });
     }
 
@@ -22,10 +23,11 @@ function cekToken(req, res, next) {
             return res.status(500).json({ statusCode: 'fail', message: 'Gagal authenticate token.', error: err.message });
         }
 
-        req.userId = decoded.id; // menyimpan userID dari token ke dalam request
+        req.terautentikasi = true
+        req.userId = decoded.id; 
         req.name = decoded.name
         req.email = decoded.email
-        next(); // ke handler berikutnya
+        next(); 
     });
 }
 

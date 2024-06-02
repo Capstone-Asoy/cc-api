@@ -10,7 +10,7 @@ router.post('/logout', controller.logout);
 router.get('/me', cekToken, controller.profile);
 router.put('/editProfile', cekToken, controller.editProfile);
 
-router.get('/detailBook/:id', controller.detailBook);
+router.get('/detailBook/:id', cekToken, controller.detailBook);
 router.post('/bookmarks', cekToken, controller.addBookmark);
 router.delete('/bookmarks/:bookmarks_id', cekToken, controller.deleteBookmark);
 router.get('/bookmarks', cekToken, controller.getBookmarks);
