@@ -224,10 +224,18 @@ exports.profile = (req, res) => {
 			// message: 'Gagal menampilkan profile anda!'
 		})
 
+		const user = fields[0]
+
 		res.status(200).json({
 			statusCode: 'Success',
 			message: 'Data user berhasil ditampilkan',
-			data: fields
+			name: user.name,
+			email: user.email,
+			image: user.image,
+			reading_list: user.reading_list,
+			list_judul: user.list_judul ? user.list_judul.split(',').map(list_judul => list_judul.trim()) : [],
+			list_image: user.list_image ? user.list_image.split(',').map(list_image => list_image.trim()) : [],
+			// list_image: user.list_image
 		})
 	})
 }
@@ -384,7 +392,8 @@ exports.filtering = (req, res) => {
 		})
 	}
 
-	const sql = `select books_id, judul, image from books where genre like '%${genre}%'`
+	const sql = `select books_id, judul, image from books where genre like '%${genre}%' 
+					and (genre like '${genre}, %' or genre like '%, ${genre}' or genre like '%, ${genre}, %' or genre = '${genre}')`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -401,7 +410,7 @@ exports.filtering = (req, res) => {
 		res.status(200).json({
 			statusCode: 'Success',
 			message: "Data berhasil ditampilkan (menggunakan query)",
-			data: { fields }
+			fields
 		})
 	})
 }
@@ -469,7 +478,7 @@ exports.addRating = (req, res) => {
 exports.getHistory = (req, res) => {
 	const userId = req.userId
 
-	const sql = `select b.judul, b.image, b.books_id 
+	const sql = `select distinct b.judul, b.image, b.books_id 
 					from books b 
 					join history h on h.book_id = b.books_id
 					where user_id = '${userId}'`
@@ -483,7 +492,7 @@ exports.getHistory = (req, res) => {
 		res.status(200).json({
 			statusCode: 'Success',
 			message: "Data berhasil ditampilkan",
-			books: fields,
+			fields,
 		})
 	})
 }
@@ -519,7 +528,7 @@ exports.detailBook = (req, res) => {
         if (err) {
             return res.status(500).json({
                 statusCode: 'Fail',
-                message: err.message
+                message: err.message || 'Unknown error'
             });
         }
 
@@ -531,17 +540,8 @@ exports.detailBook = (req, res) => {
         }
 
         const book = result[0];
-
-		if (req.terautentikasi) {
-			const history_id = nanoid(8)
-			const sql2 = `insert into history (history_id, user_id, book_id) values ('${history_id}', '${req.userId}', '${book.books_id}')`
-	
-			db.query(sql2, (err, fields) => {
-				
-			})
-		}
-
-        res.status(200).json({
+        
+        const response = {
             bookId: book.books_id,
             title: book.judul,
             synopsis: book.deskripsi,
@@ -553,10 +553,24 @@ exports.detailBook = (req, res) => {
             genre: book.genre ? book.genre.split(',').map(genre => genre.trim()) : [],
             coverImage: book.image,
             avgRating: book.avg_rating
-        });
-    });
+        };
 
-		
+        res.status(200).json(response);
+
+        if (req.terautentikasi) {
+            const history_id = nanoid(8);
+            const sql2 = `insert into history (history_id, user_id, book_id) values ('${history_id}', '${req.userId}', '${book.books_id}')`;
+
+            db.query(sql2, (err) => {
+                if (err) {
+                    res.status(500).json({
+						statusCode: 'fail',
+						message: err.message
+					})
+                }
+            });
+        }
+    });
 };
 
 exports.addBookmark = (req, res) => {
