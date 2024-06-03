@@ -210,10 +210,12 @@ exports.profile = (req, res) => {
 	const sql = `select u.name, u.email, u.image, 
                   count(b.bookmark_id) as reading_list,
 				  group_concat(distinct bk.judul separator ', ') as list_judul,
-				  group_concat(bk.image separator ', ') as list_image
+				  group_concat(distinct bk.image separator ', ') as list_image,
+				  count(distinct r.rating_id) as list_rating
 				from user u
 				left join bookmarks b on u.user_id = b.user_id
 				left join books bk on bk.books_id = b.book_id
+				left join rating r on r.user_id = u.user_id
 				where u.user_id = '${userId}'
 				group by u.name, u.email, u.image`
 
@@ -235,6 +237,7 @@ exports.profile = (req, res) => {
 			reading_list: user.reading_list,
 			list_judul: user.list_judul ? user.list_judul.split(',').map(list_judul => list_judul.trim()) : [],
 			list_image: user.list_image ? user.list_image.split(',').map(list_image => list_image.trim()) : [],
+			list_rating: user.list_rating,
 			// list_image: user.list_image
 		})
 	})
