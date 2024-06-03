@@ -446,15 +446,15 @@ exports.addRating = (req, res) => {
 			})
 		}
 
-		const cekUser = `select user_id from rating`
+		const cekUser = `select user_id, books_id from rating`
 
 		db.query(cekUser, (err, fields) => {
-			const udahAda = fields.some(rating => rating.user_id === userId)
+			const udahAda = fields.some(rating => rating.user_id === userId && rating.books_id === books_id)
 
 			let sql
 			if (udahAda) {
 				// console.log(userId, 'udah ada: ' + udahAda);
-				sql = `update rating set rating = '${rating}', review = '${review}' where user_id = '${userId}'`
+				sql = `update rating set rating = '${rating}', review = '${review}' where user_id = '${userId}' and books_id = '${books_id}'`
 			} else {
 				sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
 			}
