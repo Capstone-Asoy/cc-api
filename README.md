@@ -44,7 +44,7 @@ Sebelum memulai, pastikan Anda memiliki:
 
     ```yaml
     runtime: nodejs20
-    instance_class: F2
+    instance_class: F1
     env_variables:
       DB_HOST: <CLOUD_SQL_INSTANCE_IP>
       DB_USER: <DATABASE_USER>
