@@ -74,6 +74,7 @@ exports.register = (req, res) => {
 			const hashPass = bcrypt.hashSync(password, 5);
 			const user_id = nanoid(8);
 			const image = req.file ? req.file.originalname : '';
+			let publicUrl = ''
 
 
 			try {
@@ -98,45 +99,47 @@ exports.register = (req, res) => {
 
 					await save.makePublic()
 
-					const publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
-					const isNewAcc = true
+					publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
 
-					const sql = `insert into user (user_id, name, password, image, email, isNewAcc) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}', '${isNewAcc}')`;
-
-					db.query(sql, (err, fields) => {
-						if (err) {
-							return res.status(500).json({
-								statusCode: 'Fail',
-								message: err.message
-							});
-						}
-
-						if (fields.affectedRows) {
-							const data = {
-								isSucces: fields.affectedRows,
-								id: user_id
-							};
-
-							const payload = {
-								id: user_id,
-								name: name,
-								email: email
-							};
-
-							const token = jwt.sign(payload, 'jwtrahasia', {
-								expiresIn: 86400 // aktif selama 24 jam
-							});
-
-							return res.status(201).json({
-								data,
-								statusCode: 'Success',
-								message: 'Register berhasil bang',
-								auth: true,
-								token: token
-							});
-						}
-					});
 				}
+
+				const isNewAcc = true
+
+				const sql = `insert into user (user_id, name, password, image, email, isNewAcc) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}', '${isNewAcc}')`;
+
+				db.query(sql, (err, fields) => {
+					if (err) {
+						return res.status(500).json({
+							statusCode: 'Fail',
+							message: err.message
+						});
+					}
+
+					if (fields.affectedRows) {
+						const data = {
+							isSucces: fields.affectedRows,
+							id: user_id
+						};
+
+						const payload = {
+							id: user_id,
+							name: name,
+							email: email
+						};
+
+						const token = jwt.sign(payload, 'jwtrahasia', {
+							expiresIn: 86400 // aktif selama 24 jam
+						});
+
+						return res.status(201).json({
+							data,
+							statusCode: 'Success',
+							message: 'Register berhasil bang',
+							auth: true,
+							token: token
+						});
+					}
+				});
 			} catch (err) {
 				res.status(500).json({
 					statusCode: 'Fail',
@@ -502,9 +505,9 @@ exports.getHistory = (req, res) => {
 
 
 exports.detailBook = (req, res) => {
-    const { id } = req.params;
+	const { id } = req.params;
 
-    const sql = `
+	const sql = `
         SELECT 
             b.books_id,
             b.image,
@@ -527,216 +530,216 @@ exports.detailBook = (req, res) => {
             b.books_id
     `;
 
-    db.query(sql, [id, id], (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message || 'Unknown error'
-            });
-        }
+	db.query(sql, [id, id], (err, result) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message || 'Unknown error'
+			});
+		}
 
-        if (result.length === 0) {
-            return res.status(404).json({
-                statusCode: 'Fail',
-                message: 'Buku tidak ditemukan!'
-            });
-        }
+		if (result.length === 0) {
+			return res.status(404).json({
+				statusCode: 'Fail',
+				message: 'Buku tidak ditemukan!'
+			});
+		}
 
-        const book = result[0];
-        
-        const response = {
-            bookId: book.books_id,
-            title: book.judul,
-            synopsis: book.deskripsi,
-            author: book.penulis,
-            publisher: book.penerbit,
-            year: book.tahun_terbit,
-            pageCount: book.jml_halaman,
-            isbn: book.ISBN,
-            genre: book.genre ? book.genre.split(',').map(genre => genre.trim()) : [],
-            coverImage: book.image,
-            avgRating: book.avg_rating
-        };
+		const book = result[0];
 
-        res.status(200).json(response);
+		const response = {
+			bookId: book.books_id,
+			title: book.judul,
+			synopsis: book.deskripsi,
+			author: book.penulis,
+			publisher: book.penerbit,
+			year: book.tahun_terbit,
+			pageCount: book.jml_halaman,
+			isbn: book.ISBN,
+			genre: book.genre ? book.genre.split(',').map(genre => genre.trim()) : [],
+			coverImage: book.image,
+			avgRating: book.avg_rating
+		};
 
-        if (req.terautentikasi) {
-            const history_id = nanoid(8);
-            const sql2 = `insert into history (history_id, user_id, book_id) values ('${history_id}', '${req.userId}', '${book.books_id}')`;
+		res.status(200).json(response);
 
-            db.query(sql2, (err) => {
-                if (err) {
-                    res.status(500).json({
+		if (req.terautentikasi) {
+			const history_id = nanoid(8);
+			const sql2 = `insert into history (history_id, user_id, book_id) values ('${history_id}', '${req.userId}', '${book.books_id}')`;
+
+			db.query(sql2, (err) => {
+				if (err) {
+					res.status(500).json({
 						statusCode: 'fail',
 						message: err.message
 					})
-                }
-            });
-        }
-    });
+				}
+			});
+		}
+	});
 };
 
 exports.addBookmark = (req, res) => {
-    const { books_id } = req.body;
-    const user_id = req.userId;
+	const { books_id } = req.body;
+	const user_id = req.userId;
 
-    if (!books_id) {
-        return res.status(400).json({
-            statusCode: 'Fail',
-            message: 'books_id diperlukan'
-        });
-    }
+	if (!books_id) {
+		return res.status(400).json({
+			statusCode: 'Fail',
+			message: 'books_id diperlukan'
+		});
+	}
 
-    // Periksa apakah buku dengan books_id ada
-    const sqlCheckBook = `SELECT * FROM books WHERE books_id = ?`;
-    db.query(sqlCheckBook, [books_id], (err, bookResult) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message
-            });
-        }
+	// Periksa apakah buku dengan books_id ada
+	const sqlCheckBook = `SELECT * FROM books WHERE books_id = ?`;
+	db.query(sqlCheckBook, [books_id], (err, bookResult) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
 
-        if (bookResult.length === 0) {
-            return res.status(404).json({
-                statusCode: 'Fail',
-                message: 'Buku tidak ditemukan'
-            });
-        }
+		if (bookResult.length === 0) {
+			return res.status(404).json({
+				statusCode: 'Fail',
+				message: 'Buku tidak ditemukan'
+			});
+		}
 
-        // Periksa apakah bookmark untuk books_id sudah ada untuk user
-        const sqlCheckBookmark = `SELECT * FROM bookmarks WHERE user_id = ? AND book_id = ?`;
-        db.query(sqlCheckBookmark, [user_id, books_id], (err, bookmarkResult) => {
-            if (err) {
-                return res.status(500).json({
-                    statusCode: 'Fail',
-                    message: err.message
-                });
-            }
+		// Periksa apakah bookmark untuk books_id sudah ada untuk user
+		const sqlCheckBookmark = `SELECT * FROM bookmarks WHERE user_id = ? AND book_id = ?`;
+		db.query(sqlCheckBookmark, [user_id, books_id], (err, bookmarkResult) => {
+			if (err) {
+				return res.status(500).json({
+					statusCode: 'Fail',
+					message: err.message
+				});
+			}
 
-            if (bookmarkResult.length > 0) {
-                return res.status(409).json({
-                    statusCode: 'Fail',
-                    message: 'Bookmark sudah ada'
-                });
-            }
+			if (bookmarkResult.length > 0) {
+				return res.status(409).json({
+					statusCode: 'Fail',
+					message: 'Bookmark sudah ada'
+				});
+			}
 
-            // Jika buku ditemukan dan bookmark belum ada, menambahkan bookmark
-            const bookmark_id = nanoid(10);
-            const sql = `INSERT INTO bookmarks (bookmark_id, user_id, book_id) VALUES (?, ?, ?)`;
+			// Jika buku ditemukan dan bookmark belum ada, menambahkan bookmark
+			const bookmark_id = nanoid(10);
+			const sql = `INSERT INTO bookmarks (bookmark_id, user_id, book_id) VALUES (?, ?, ?)`;
 
-            db.query(sql, [bookmark_id, user_id, books_id], (err, result) => {
-                if (err) {
-                    return res.status(500).json({
-                        statusCode: 'Fail',
-                        message: err.message
-                    });
-                }
+			db.query(sql, [bookmark_id, user_id, books_id], (err, result) => {
+				if (err) {
+					return res.status(500).json({
+						statusCode: 'Fail',
+						message: err.message
+					});
+				}
 
-                res.status(201).json({
-                    bookmarkId: bookmark_id,
-                    message: 'Sukses menambahkan bookmark'
-                });
-            });
-        });
-    });
+				res.status(201).json({
+					bookmarkId: bookmark_id,
+					message: 'Sukses menambahkan bookmark'
+				});
+			});
+		});
+	});
 };
 
 exports.deleteBookmark = (req, res) => {
-    const { bookmarks_id } = req.params;
-    const user_id = req.userId;
+	const { bookmarks_id } = req.params;
+	const user_id = req.userId;
 
-    const sql = `DELETE FROM bookmarks WHERE bookmark_id = ? AND user_id = ?`;
-    db.query(sql, [bookmarks_id, user_id], (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message
-            });
-        }
+	const sql = `DELETE FROM bookmarks WHERE bookmark_id = ? AND user_id = ?`;
+	db.query(sql, [bookmarks_id, user_id], (err, result) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                statusCode: 'Fail',
-                message: 'Bookmark tidak ditemukan atau tidak dimiliki oleh pengguna ini'
-            });
-        }
+		if (result.affectedRows === 0) {
+			return res.status(404).json({
+				statusCode: 'Fail',
+				message: 'Bookmark tidak ditemukan atau tidak dimiliki oleh pengguna ini'
+			});
+		}
 
-        res.status(200).json({
-            message: 'Bookmark berhasil dihapus'
-        });
-    });
+		res.status(200).json({
+			message: 'Bookmark berhasil dihapus'
+		});
+	});
 };
 
 exports.getBookmarks = (req, res) => {
-    const userId = req.userId;
+	const userId = req.userId;
 
-    const sql = `
+	const sql = `
         SELECT bk.bookmark_id, b.judul, b.image, b.penulis 
         FROM bookmarks bk
         JOIN books b ON bk.book_id = b.books_id
         WHERE bk.user_id = ?
     `;
 
-    db.query(sql, [userId], (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message
-            });
-        }
+	db.query(sql, [userId], (err, result) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
 
-        if (result.length === 0) {
-            return res.status(204).json({
-            });
-        }
+		if (result.length === 0) {
+			return res.status(204).json({
+			});
+		}
 
-        res.status(200).json({
-            bookmarks: result
-        });
-    });
+		res.status(200).json({
+			bookmarks: result
+		});
+	});
 };
 
 exports.searchBooks = (req, res) => {
-    const { title, author } = req.query;
+	const { title, author } = req.query;
 
-    if (!title && !author) {
-        return res.status(400).json({
-            statusCode: 'Fail',
-            message: 'Setidaknya salah satu dari title atau author harus disertakan'
-        });
-    }
+	if (!title && !author) {
+		return res.status(400).json({
+			statusCode: 'Fail',
+			message: 'Setidaknya salah satu dari title atau author harus disertakan'
+		});
+	}
 
-    let sql = `SELECT books_id, image, judul, penulis FROM books WHERE 1=1`;
-    let params = [];
+	let sql = `SELECT books_id, image, judul, penulis FROM books WHERE 1=1`;
+	let params = [];
 
-    if (title) {
-        sql += ` AND judul LIKE ?`;
-        params.push(`%${title}%`);
-    }
+	if (title) {
+		sql += ` AND judul LIKE ?`;
+		params.push(`%${title}%`);
+	}
 
-    if (author) {
-        sql += ` AND penulis LIKE ?`;
-        params.push(`%${author}%`);
-    }
+	if (author) {
+		sql += ` AND penulis LIKE ?`;
+		params.push(`%${author}%`);
+	}
 
-    db.query(sql, params, (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message
-            });
-        }
+	db.query(sql, params, (err, results) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
 
-        if (results.length === 0) {
-            return res.status(204).json({
-            });
-        }
+		if (results.length === 0) {
+			return res.status(204).json({
+			});
+		}
 
-        res.status(200).json({
-            results: results
-        });
-    });
+		res.status(200).json({
+			results: results
+		});
+	});
 };
 
 
@@ -744,18 +747,18 @@ exports.searchBooks = (req, res) => {
 exports.chgPass = (req, res) => {
 	const userId = req.userId
 
-	const {newPass} = req.body
+	const { newPass } = req.body
 
 	if (!newPass) {
 		return res.status(400).json({
-			statusCode:'fail',
-			message:'Mohon lengkapi Password anda!'
+			statusCode: 'fail',
+			message: 'Mohon lengkapi Password anda!'
 		})
 	}
 
 	const hashNewPass = bcrypt.hashSync(newPass, 5);
 
-	const sql = `update user set password = '${hashNewPass}' where user_id = '${userId}'` 
+	const sql = `update user set password = '${hashNewPass}' where user_id = '${userId}'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -772,27 +775,27 @@ exports.chgPass = (req, res) => {
 }
 
 exports.getGenres = (req, res) => {
-    const sql = `SELECT DISTINCT genre FROM books`;
+	const sql = `SELECT DISTINCT genre FROM books`;
 
-    db.query(sql, (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message
-            });
-        }
+	db.query(sql, (err, results) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
 
-        let genres = new Set();
-        results.forEach(row => {
-            if (row.genre) {
-                row.genre.split(',').forEach(genre => genres.add(genre.trim()));
-            }
-        });
+		let genres = new Set();
+		results.forEach(row => {
+			if (row.genre) {
+				row.genre.split(',').forEach(genre => genres.add(genre.trim()));
+			}
+		});
 
 		let sortedGenres = Array.from(genres).sort();
 
-        res.status(200).json({
-            genres: sortedGenres
-        });
-    });
+		res.status(200).json({
+			genres: sortedGenres
+		});
+	});
 };
