@@ -217,7 +217,7 @@ exports.profile = (req, res) => {
 				  count(distinct r.rating_id) as list_rating
 				from user u
 				left join bookmarks b on u.user_id = b.user_id
-				left join books bk on bk.books_id = b.book_id
+				left join books bk on bk.books_id = b.books_id
 				left join rating r on r.user_id = u.user_id
 				where u.user_id = '${userId}'
 				group by u.name, u.email, u.image`
@@ -398,8 +398,11 @@ exports.filtering = (req, res) => {
 		})
 	}
 
-	const sql = `select books_id, judul, image from books where genre like '%${genre}%' 
-					and (genre like '${genre}, %' or genre like '%, ${genre}' or genre like '%, ${genre}, %' or genre = '${genre}')`
+	const sql = `select b.books_id, b.judul, b.image 
+					from books b 
+					join book_genres bg on bg.books_id = b.books_id
+					join genres g on g.genre_id = bg.genre_id
+					where g.genre = '${genre}'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -430,7 +433,7 @@ exports.addRating = (req, res) => {
 	if (!rating || !review) {
 		return res.status(406).json({
 			statusCode: 'fail',
-			message: 'Mohon lengkapi feedback'
+			message: 'Mohon lengkapi Review anda!'
 		})
 	}
 
