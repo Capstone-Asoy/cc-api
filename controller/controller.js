@@ -447,7 +447,14 @@ exports.addRating = (req, res) => {
 	const cek = `select books_id from books`
 
 	db.query(cek, (err, fields) => {
-		const cekBookId = fields.some(book => book.books_id === books_id)
+		if (err) return res.status(500).json({
+            statusCode: 'fail',
+            message: err.message
+        });
+
+		const cekBookId = fields.some(book => book.books_id === parseInt(books_id))
+		// console.log(fields, "ini req: ", books_id);
+		// console.log(typeof(books_id));
 		if (!cekBookId) {
 			return res.status(409).json({
 				statusCode: 'fail',
