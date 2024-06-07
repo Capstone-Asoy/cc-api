@@ -3,7 +3,7 @@ const router = express.Router();
 const controller = require('../controller/controller');
 const cekToken = require('../token/token')
 
-router.get('/', controller.path)
+router.get('/readiness_check', controller.path)
 router.post('/register', controller.register);
 router.post('/login', controller.login);
 router.post('/logout', controller.logout);
