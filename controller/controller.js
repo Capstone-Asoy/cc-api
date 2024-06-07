@@ -778,7 +778,7 @@ exports.chgPass = (req, res) => {
 }
 
 exports.getGenres = (req, res) => {
-	const sql = `SELECT DISTINCT genre FROM books`;
+	const sql = `SELECT DISTINCT genre FROM genres`;
 
 	db.query(sql, (err, results) => {
 		if (err) {
