@@ -2,6 +2,14 @@ runtime: nodejs18
 instance_class: F1
 service: default
 
+handlers:
+- url: /
+  script: auto
+- url: /login
+  script: auto
+- url: /register
+  script: auto
+
 readiness_check:
   path: "/readiness_check"
   check_interval_sec: 5
