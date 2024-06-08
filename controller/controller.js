@@ -515,9 +515,9 @@ exports.getHistory = (req, res) => {
 
 
 exports.detailBook = (req, res) => {
-	const { id } = req.params;
+    const { id } = req.params;
 
-	const sql = `
+    const sql = `
         SELECT 
             b.books_id,
             b.image,
@@ -544,53 +544,55 @@ exports.detailBook = (req, res) => {
             b.books_id
     `;
 
-	db.query(sql, [id, id], (err, result) => {
-		if (err) {
-			return res.status(500).json({
-				statusCode: 'Fail',
-				message: err.message || 'Unknown error'
-			});
-		}
+    db.query(sql, [id, id], (err, result) => {
+        if (err) {
+            return res.status(500).json({
+                statusCode: 'Fail',
+                message: err.message || 'Unknown error'
+            });
+        }
 
-		if (result.length === 0) {
-			return res.status(404).json({
-				statusCode: 'Fail',
-				message: 'Buku tidak ditemukan!'
-			});
-		}
+        if (result.length === 0) {
+            return res.status(404).json({
+                statusCode: 'Fail',
+                message: 'Buku tidak ditemukan!'
+            });
+        }
 
-		const book = result[0];
+        const book = result[0];
 
-		const response = {
-			bookId: book.books_id,
-			title: book.judul,
-			synopsis: book.deskripsi,
-			author: book.penulis,
-			publisher: book.penerbit,
-			year: book.tahun_terbit,
-			pageCount: book.jml_halaman,
-			isbn: book.ISBN,
-			genre: book.genre ? book.genre.split(',').map(genre => genre.trim()) : [],
-			coverImage: book.image,
-			avgRating: book.avg_rating
-		};
+        const response = {
+            bookId: book.books_id,
+            title: book.judul,
+            synopsis: book.deskripsi,
+            author: book.penulis,
+            publisher: book.penerbit,
+            year: book.tahun_terbit,
+            pageCount: book.jml_halaman,
+            isbn: book.ISBN,
+            genre: book.genre ? book.genre.split(',').map(genre => genre.trim()) : [],
+            coverImage: book.image,
+            avgRating: book.avg_rating
+        };
 
-		res.status(200).json(response);
+        if (req.terautentikasi) {
+            const history_id = nanoid(8);
+            const sql2 = `INSERT INTO history (history_id, user_id, books_id) VALUES ('${history_id}', '${req.userId}', '${book.books_id}')`;
 
-		if (req.terautentikasi) {
-			const history_id = nanoid(8);
-			const sql2 = `INSERT INTO history (history_id, user_id, book_id) VALUES ('${history_id}', '${req.userId}', '${book.books_id}')`;
+            db.query(sql2, (err) => {
+                if (err) {
+                    return res.status(500).json({
+                        statusCode: 'Fail',
+                        message: err.message
+                    });
+                }
 
-			db.query(sql2, (err) => {
-				if (err) {
-					res.status(500).json({
-						statusCode: 'Fail',
-						message: err.message
-					});
-				}
-			});
-		}
-	});
+                res.status(200).json(response);
+            });
+        } else {
+            res.status(200).json(response);
+        }
+    });
 };
 
 exports.addBookmark = (req, res) => {
