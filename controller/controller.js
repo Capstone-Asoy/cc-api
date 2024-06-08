@@ -496,7 +496,7 @@ exports.getHistory = (req, res) => {
 
 	const sql = `select distinct b.judul, b.image, b.books_id 
 					from books b 
-					join history h on h.book_id = b.books_id
+					join history h on h.books_id = b.books_id
 					where user_id = '${userId}'`
 
 	db.query(sql, (err, fields) => {
