@@ -576,10 +576,9 @@ exports.detailBook = (req, res) => {
         };
 
         if (req.terautentikasi) {
-            const history_id = nanoid(8);
-            const sql2 = `INSERT INTO history (history_id, user_id, books_id) VALUES ('${history_id}', '${req.userId}', '${book.books_id}')`;
-
-            db.query(sql2, (err) => {
+            // Cek apakah book id sudah ada di history
+            const checkSql = `SELECT * FROM history WHERE books_id = ?`;
+            db.query(checkSql, [book.books_id], (err, result) => {
                 if (err) {
                     return res.status(500).json({
                         statusCode: 'Fail',
@@ -587,7 +586,32 @@ exports.detailBook = (req, res) => {
                     });
                 }
 
-                res.status(200).json(response);
+                if (result.length > 0) {
+                    // book id ada di hitory, update time
+                    const updateSql = `UPDATE history SET time = CURRENT_TIMESTAMP WHERE books_id = ?`;
+                    db.query(updateSql, [book.books_id], (err) => {
+                        if (err) {
+                            return res.status(500).json({
+                                statusCode: 'Fail',
+                                message: err.message
+                            });
+                        }
+                        res.status(200).json(response);
+                    });
+                } else {
+                    // book id tidak ada di history, insert data
+                    const history_id = nanoid(8);
+                    const insertSql = `INSERT INTO history (history_id, user_id, books_id, time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`;
+                    db.query(insertSql, [history_id, req.userId, book.books_id], (err) => {
+                        if (err) {
+                            return res.status(500).json({
+                                statusCode: 'Fail',
+                                message: err.message
+                            });
+                        }
+                        res.status(200).json(response);
+                    });
+                }
             });
         } else {
             res.status(200).json(response);
