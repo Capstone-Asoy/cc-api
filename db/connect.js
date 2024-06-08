@@ -2,9 +2,14 @@
 const mysql = require('mysql')
 // membuat variable db untuk memanggil function yang ada dalam variable mysql
 const db = mysql.createConnection({
-    host: "localhost", 
-    user: "root", 
-    password: "", 
+    // host: "localhost", 
+    // user: "root", 
+    // password: "", 
+    // database: "backend"
+
+    host: "34.101.37.172",
+    user: "root",
+    password: "bookmate",
     database: "backend"
 })
 
