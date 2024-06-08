@@ -528,12 +528,16 @@ exports.detailBook = (req, res) => {
             b.tahun_terbit,
             b.jml_halaman,
             b.ISBN,
-            b.genre,
-            COALESCE(AVG(r.rating), 0) AS avg_rating
+            GROUP_CONCAT(g.genre SEPARATOR ', ') AS genre,
+            ROUND(COALESCE(AVG(r.rating), 0), 2) AS avg_rating
         FROM 
             books b
         LEFT JOIN 
             rating r ON b.books_id = r.books_id
+        LEFT JOIN 
+            book_genres bg ON b.books_id = bg.books_id
+        LEFT JOIN 
+            genres g ON bg.genre_id = g.genre_id
         WHERE 
             b.books_id = ? OR b.judul = ?
         GROUP BY 
@@ -575,14 +579,14 @@ exports.detailBook = (req, res) => {
 
 		if (req.terautentikasi) {
 			const history_id = nanoid(8);
-			const sql2 = `insert into history (history_id, user_id, book_id) values ('${history_id}', '${req.userId}', '${book.books_id}')`;
+			const sql2 = `INSERT INTO history (history_id, user_id, book_id) VALUES ('${history_id}', '${req.userId}', '${book.books_id}')`;
 
 			db.query(sql2, (err) => {
 				if (err) {
 					res.status(500).json({
-						statusCode: 'fail',
+						statusCode: 'Fail',
 						message: err.message
-					})
+					});
 				}
 			});
 		}
