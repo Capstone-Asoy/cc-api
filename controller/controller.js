@@ -299,7 +299,7 @@ exports.editProfile = (req, res) => {
 			});
 		}
 
-		const cek = `select name, email from user`
+		const cek = `select user_id, name, email from user`
 
 		db.query(cek, async (err, fields) => {
 			if (err) {
@@ -309,7 +309,7 @@ exports.editProfile = (req, res) => {
 				});
 			}
 
-			const cekName = fields.some(user => user.name === name)
+			const cekName = fields.some(user => user.name === name && user.user_id !== userId)
 			if (cekName) {
 				return res.status(409).json({
 					statusCode: 'fail',
@@ -317,7 +317,7 @@ exports.editProfile = (req, res) => {
 				})
 			}
 
-			const cekEmail = fields.some(user => user.email === email)
+			const cekEmail = fields.some(user => user.email === email && user.user_id !== userId)
 			if (cekEmail) {
 				return res.status(409).json({
 					statusCode: 'fail',
