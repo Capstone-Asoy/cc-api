@@ -299,78 +299,107 @@ exports.editProfile = (req, res) => {
 			});
 		}
 
-		let publicUrl = ''
-		if (req.file) {
-			try {
-				const save = bucket.file(req.file.originalname);
-				const saveToBucket = save.createWriteStream({
-					resumable: false
-				});
+		const cek = `select name, email from user`
 
-				saveToBucket.on('error', err => {
-					throw new Error(err.message);
-				});
-
-				const uploadFinished = new Promise((resolve, reject) => {
-					saveToBucket.on('finish', resolve);
-					saveToBucket.on('error', reject);
-				});
-
-				saveToBucket.end(req.file.buffer);
-
-				await uploadFinished
-				await save.makePublic()
-
-				publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
-
-
-			} catch (err) {
-				return res.status(400).json({
-					statusCode: 'fail',
+		db.query(cek, async (err, fields) => {
+			if (err) {
+				return res.status(500).json({
+					statusCode: 'Fail',
 					message: err.message
 				});
 			}
-		}
-		let sql = ''
 
-		if (publicUrl !== '') {
-			sql = `update user set name = '${name}', email = '${email}', image = '${publicUrl}' where user_id = '${userId}'`
-		} else {
-			sql = `update user set name = '${name}', email = '${email}' where user_id = '${userId}'`
-		}
-
-		db.query(sql, (err, fields) => {
-			if (err) return res.status(500).json({
-				statusCode: 'fail',
-				message: err.message
-			})
-
-			if (fields.affectedRows) {
-				const data = {
-					isSucces: fields.affectedRows,
-					id: req.userId
-				};
-
-				const payload = {
-					id: req.userId,
-					name: name,
-					email: email
-				};
-
-				const token = jwt.sign(payload, 'jwtrahasia', {
-					expiresIn: 86400 // aktif selama 24 jam
-				});
-
-				res.status(201).json({
-					data,
-					statusCode: 'Success',
-					message: 'Data Berhasil di edit',
-					auth: true,
-					token: token
-				});
+			const cekName = fields.some(user => user.name === name)
+			if (cekName) {
+				return res.status(409).json({
+					statusCode: 'fail',
+					message: 'nama telah digunakan'
+				})
 			}
 
+			const cekEmail = fields.some(user => user.email === email)
+			if (cekEmail) {
+				return res.status(409).json({
+					statusCode: 'fail',
+					message: 'email telah digunakan'
+				})
+			}
+
+			let publicUrl = ''
+			if (req.file) {
+				try {
+					const save = bucket.file(req.file.originalname);
+					const saveToBucket = save.createWriteStream({
+						resumable: false
+					});
+
+					saveToBucket.on('error', err => {
+						throw new Error(err.message);
+					});
+
+					const uploadFinished = new Promise((resolve, reject) => {
+						saveToBucket.on('finish', resolve);
+						saveToBucket.on('error', reject);
+					});
+
+					saveToBucket.end(req.file.buffer);
+
+					await uploadFinished
+					await save.makePublic()
+
+					publicUrl = `https://storage.googleapis.com/${bucket.name}/${save.name}`
+
+
+				} catch (err) {
+					return res.status(400).json({
+						statusCode: 'fail',
+						message: err.message
+					});
+				}
+			}
+			let sql = ''
+
+			if (publicUrl !== '') {
+				sql = `update user set name = '${name}', email = '${email}', image = '${publicUrl}' where user_id = '${userId}'`
+			} else {
+				sql = `update user set name = '${name}', email = '${email}' where user_id = '${userId}'`
+			}
+
+			db.query(sql, (err, fields) => {
+				if (err) return res.status(500).json({
+					statusCode: 'fail',
+					message: err.message
+				})
+
+				if (fields.affectedRows) {
+					const data = {
+						isSucces: fields.affectedRows,
+						id: req.userId
+					};
+
+					const payload = {
+						id: req.userId,
+						name: name,
+						email: email
+					};
+
+					const token = jwt.sign(payload, 'jwtrahasia', {
+						expiresIn: 86400 // aktif selama 24 jam
+					});
+
+					res.status(201).json({
+						data,
+						statusCode: 'Success',
+						message: 'Data Berhasil di edit',
+						auth: true,
+						token: token
+					});
+				}
+
+			})
 		})
+
+
 	})
 }
 
@@ -455,9 +484,9 @@ exports.addRating = (req, res) => {
 
 	db.query(cek, (err, fields) => {
 		if (err) return res.status(500).json({
-            statusCode: 'fail',
-            message: err.message
-        });
+			statusCode: 'fail',
+			message: err.message
+		});
 
 		const cekBookId = fields.some(book => book.books_id === parseInt(books_id))
 		// console.log(fields, "ini req: ", books_id);
@@ -522,9 +551,9 @@ exports.getHistory = (req, res) => {
 
 
 exports.detailBook = (req, res) => {
-    const { id } = req.params;
+	const { id } = req.params;
 
-    const sql = `
+	const sql = `
         SELECT 
             b.books_id,
             b.image,
@@ -551,79 +580,79 @@ exports.detailBook = (req, res) => {
             b.books_id
     `;
 
-    db.query(sql, [id, id], (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message || 'Unknown error'
-            });
-        }
+	db.query(sql, [id, id], (err, result) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message || 'Unknown error'
+			});
+		}
 
-        if (result.length === 0) {
-            return res.status(404).json({
-                statusCode: 'Fail',
-                message: 'Buku tidak ditemukan!'
-            });
-        }
+		if (result.length === 0) {
+			return res.status(404).json({
+				statusCode: 'Fail',
+				message: 'Buku tidak ditemukan!'
+			});
+		}
 
-        const book = result[0];
+		const book = result[0];
 
-        const response = {
-            bookId: book.books_id,
-            title: book.judul,
-            synopsis: book.deskripsi,
-            author: book.penulis,
-            publisher: book.penerbit,
-            year: book.tahun_terbit,
-            pageCount: book.jml_halaman,
-            isbn: book.ISBN,
-            genre: book.genre ? book.genre.split(',').map(genre => genre.trim()) : [],
-            coverImage: book.image,
-            avgRating: book.avg_rating
-        };
+		const response = {
+			bookId: book.books_id,
+			title: book.judul,
+			synopsis: book.deskripsi,
+			author: book.penulis,
+			publisher: book.penerbit,
+			year: book.tahun_terbit,
+			pageCount: book.jml_halaman,
+			isbn: book.ISBN,
+			genre: book.genre ? book.genre.split(',').map(genre => genre.trim()) : [],
+			coverImage: book.image,
+			avgRating: book.avg_rating
+		};
 
-        if (req.terautentikasi) {
-            // Cek apakah book id sudah ada di history
-            const checkSql = `SELECT * FROM history WHERE books_id = ?`;
-            db.query(checkSql, [book.books_id], (err, result) => {
-                if (err) {
-                    return res.status(500).json({
-                        statusCode: 'Fail',
-                        message: err.message
-                    });
-                }
+		if (req.terautentikasi) {
+			// Cek apakah book id sudah ada di history
+			const checkSql = `SELECT * FROM history WHERE books_id = ?`;
+			db.query(checkSql, [book.books_id], (err, result) => {
+				if (err) {
+					return res.status(500).json({
+						statusCode: 'Fail',
+						message: err.message
+					});
+				}
 
-                if (result.length > 0) {
-                    // book id ada di hitory, update time
-                    const updateSql = `UPDATE history SET time = CURRENT_TIMESTAMP WHERE books_id = ?`;
-                    db.query(updateSql, [book.books_id], (err) => {
-                        if (err) {
-                            return res.status(500).json({
-                                statusCode: 'Fail',
-                                message: err.message
-                            });
-                        }
-                        res.status(200).json(response);
-                    });
-                } else {
-                    // book id tidak ada di history, insert data
-                    const history_id = nanoid(8);
-                    const insertSql = `INSERT INTO history (history_id, user_id, books_id, time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`;
-                    db.query(insertSql, [history_id, req.userId, book.books_id], (err) => {
-                        if (err) {
-                            return res.status(500).json({
-                                statusCode: 'Fail',
-                                message: err.message
-                            });
-                        }
-                        res.status(200).json(response);
-                    });
-                }
-            });
-        } else {
-            res.status(200).json(response);
-        }
-    });
+				if (result.length > 0) {
+					// book id ada di hitory, update time
+					const updateSql = `UPDATE history SET time = CURRENT_TIMESTAMP WHERE books_id = ?`;
+					db.query(updateSql, [book.books_id], (err) => {
+						if (err) {
+							return res.status(500).json({
+								statusCode: 'Fail',
+								message: err.message
+							});
+						}
+						res.status(200).json(response);
+					});
+				} else {
+					// book id tidak ada di history, insert data
+					const history_id = nanoid(8);
+					const insertSql = `INSERT INTO history (history_id, user_id, books_id, time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`;
+					db.query(insertSql, [history_id, req.userId, book.books_id], (err) => {
+						if (err) {
+							return res.status(500).json({
+								statusCode: 'Fail',
+								message: err.message
+							});
+						}
+						res.status(200).json(response);
+					});
+				}
+			});
+		} else {
+			res.status(200).json(response);
+		}
+	});
 };
 
 exports.addBookmark = (req, res) => {
