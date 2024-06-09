@@ -648,7 +648,7 @@ exports.addBookmark = (req, res) => {
 		}
 
 		// Periksa apakah bookmark untuk books_id sudah ada untuk user
-		const sqlCheckBookmark = `SELECT * FROM bookmarks WHERE user_id = ? AND book_id = ?`;
+		const sqlCheckBookmark = `SELECT * FROM bookmarks WHERE user_id = ? AND books_id = ?`;
 		db.query(sqlCheckBookmark, [user_id, books_id], (err, bookmarkResult) => {
 			if (err) {
 				return res.status(500).json({
@@ -666,7 +666,7 @@ exports.addBookmark = (req, res) => {
 
 			// Jika buku ditemukan dan bookmark belum ada, menambahkan bookmark
 			const bookmark_id = nanoid(10);
-			const sql = `INSERT INTO bookmarks (bookmark_id, user_id, book_id) VALUES (?, ?, ?)`;
+			const sql = `INSERT INTO bookmarks (bookmark_id, user_id, books_id) VALUES (?, ?, ?)`;
 
 			db.query(sql, [bookmark_id, user_id, books_id], (err, result) => {
 				if (err) {
@@ -717,7 +717,7 @@ exports.getBookmarks = (req, res) => {
 	const sql = `
         SELECT bk.bookmark_id, b.judul, b.image, b.penulis 
         FROM bookmarks bk
-        JOIN books b ON bk.book_id = b.books_id
+        JOIN books b ON bk.books_id = b.books_id
         WHERE bk.user_id = ?
     `;
 
