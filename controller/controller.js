@@ -438,7 +438,7 @@ exports.filtering = (req, res) => {
 					from books b 
 					join book_genres bg on bg.books_id = b.books_id
 					join genres g on g.genre_id = bg.genre_id
-					where g.genre = '${genre}'`
+					where g.genre = '${genre}' or g.genre like '%${genre}%'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
