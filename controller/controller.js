@@ -292,6 +292,13 @@ exports.editProfile = (req, res) => {
 		const { name, email } = req.body
 		// const image = req.file ? req.file.originalname : '';
 
+		if (!name || !email) {
+			return res.status(404).json({
+				statusCode: 'Fail',
+				message: 'Mohon lengkapi data Anda!'
+			});
+		}
+
 		let publicUrl = ''
 		if (req.file) {
 			try {
