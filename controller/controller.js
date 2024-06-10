@@ -302,7 +302,7 @@ exports.editProfile = (req, res) => {
 			if (req.file) {
 				try {
 					
-					if(fields.user_Id === userId) {
+					if(fields.user_id === userId) {
 						if (fields.image) {
 							const namaFile = user.image.split('/').pop();
 							const file = bucket.file(namaFile);
