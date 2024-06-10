@@ -298,18 +298,18 @@ exports.editProfile = (req, res) => {
 				})
 			}
 
+			const user = fields.find(user => user.user_id === userId);
+
 			let publicUrl = ''
 			if (req.file) {
 				try {
-					
-					if(fields.user_id === userId) {
-						if (fields.image) {
-							const namaFile = user.image.split('/').pop();
-							const file = bucket.file(namaFile);
-							await file.delete();
-						}
+
+					if (user.image) {
+						const namaFile = user.image.split('/').pop();
+						const file = bucket.file(namaFile);
+						await file.delete();
 					}
-					
+
 
 					const save = bucket.file(req.file.originalname);
 					const saveToBucket = save.createWriteStream({
