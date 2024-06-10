@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken');
 const multer = require('multer')
 const bucket = require('../storage/upload')
+const { Firestore } = require('@google-cloud/firestore');
+const firestore = new Firestore();
 
 exports.path = (req, res) => {
 	try {
@@ -222,7 +224,7 @@ exports.profile = (req, res) => {
 				where u.user_id = '${userId}'
 				group by u.name, u.email, u.image`
 
-	db.query(sql, (err, fields) => {
+	db.query(sql, async (err, fields) => {
 		if (err) return res.status(500).json({
 			statusCode: 'Fail',
 			message: err.message
@@ -246,6 +248,8 @@ exports.profile = (req, res) => {
 	})
 }
 
+
+
 //belom valid
 exports.editProfile = (req, res) => {
 	upload.single('image')(req, res, async function (err) {
@@ -258,39 +262,8 @@ exports.editProfile = (req, res) => {
 
 		const userId = req.userId
 
-		// const getSql = `select user_id, name, username, image from user where user_id = '${userId}'`
-
-		// db.query(getSql, async (err, fields) => {
-		// 	if (err) return res.status(500).json({
-		// 		statusCode: 'Fail',
-		// 		message: err.message
-		// 	})
-
-		// 	let updateImage = fields.image
-
-		// 	if (req.file) {
-		// 		try {
-		// 			await bucket.file(updateImage).delete()
-		// 		} catch (err) {
-		// 			return res.status(400).json({
-		// 				statusCode: 'fail',
-		// 				message: err.message
-		// 			});
-		// 		}
-		// 	}
-
-		// 	res.status(201).json({
-		// 		statusCode: 'Success',
-		// 		message: 'Data sebelum di edit',
-		// 		fields,
-		// 		token
-		// 	})
-		// })
-		// hadehhh ~~~~~~~~~~~~~~~~
-
 		// update data breee
 		const { name, email } = req.body
-		// const image = req.file ? req.file.originalname : '';
 
 		if (!name || !email) {
 			return res.status(404).json({
@@ -299,7 +272,7 @@ exports.editProfile = (req, res) => {
 			});
 		}
 
-		const cek = `select user_id, name, email from user`
+		const cek = `select user_id, name, email, image from user`
 
 		db.query(cek, async (err, fields) => {
 			if (err) {
@@ -328,6 +301,13 @@ exports.editProfile = (req, res) => {
 			let publicUrl = ''
 			if (req.file) {
 				try {
+
+					if (user.image) {
+						const namaFile = user.image.split('/').pop();
+						const file = bucket.file(namaFile);
+						await file.delete();
+					}
+
 					const save = bucket.file(req.file.originalname);
 					const saveToBucket = save.createWriteStream({
 						resumable: false
@@ -875,3 +855,43 @@ exports.getGenres = (req, res) => {
 		});
 	});
 };
+
+exports.prefernce = (req, res) => {
+	const userId = req.userId
+	const genre = req.body
+
+	if (!genre) {
+		res.status(400).json({
+			statusCode: 'fail',
+			message: 'Mohon pilih genre yang anda suka!'
+		})
+	}
+	const sql = `update user set isNewAcc = '${false}' where user_id = '${userId}'`
+
+	db.query(sql, async (err, fields) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
+
+		try {
+			// const response = await axios.post('link cloud run', {
+			// 	genres: genres
+			// });
+
+			await firestore.collection('users').doc(userId).set({
+				genres: genres,
+				// recommendations: recommendations
+			});
+
+			return response.data.recommendations;
+		} catch (error) {
+			res.status(500).json({
+				statusCode: 'fail',
+				message: error.message
+			})
+		}
+	})
+}
