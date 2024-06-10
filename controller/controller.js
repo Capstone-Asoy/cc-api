@@ -307,13 +307,12 @@ exports.editProfile = (req, res) => {
 
 					if (user.image) {
 						const namaFile = user.image.split('/').pop();
-						const upload = `${name}-${namaFile}`
-						const file = bucket.file(upload);
+						const file = bucket.file(namaFile);
 						await file.delete();
 					}
 
-
-					const save = bucket.file(req.file.originalname);
+					const upload = `${name}-${req.file.originalname}`
+					const save = bucket.file(upload);
 					const saveToBucket = save.createWriteStream({
 						resumable: false
 					});
