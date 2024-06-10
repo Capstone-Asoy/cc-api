@@ -307,7 +307,8 @@ exports.editProfile = (req, res) => {
 
 					if (user.image) {
 						const namaFile = user.image.split('/').pop();
-						const file = bucket.file(namaFile);
+						const upload = `${name}-${namaFile}`
+						const file = bucket.file(upload);
 						await file.delete();
 					}
 
