@@ -81,7 +81,8 @@ exports.register = (req, res) => {
 
 			try {
 				if (req.file) {
-					const save = bucket.file(req.file.originalname);
+					const upload = `${name}-${req.file.originalname}`
+					const save = bucket.file(upload);
 					const saveToBucket = save.createWriteStream({
 						resumable: false
 					});
