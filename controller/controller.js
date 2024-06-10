@@ -301,12 +301,15 @@ exports.editProfile = (req, res) => {
 			let publicUrl = ''
 			if (req.file) {
 				try {
-
-					if (user.image) {
-						const namaFile = user.image.split('/').pop();
-						const file = bucket.file(namaFile);
-						await file.delete();
+					
+					if(fields.user_Id === userId) {
+						if (fields.image) {
+							const namaFile = user.image.split('/').pop();
+							const file = bucket.file(namaFile);
+							await file.delete();
+						}
 					}
+					
 
 					const save = bucket.file(req.file.originalname);
 					const saveToBucket = save.createWriteStream({
