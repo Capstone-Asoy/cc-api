@@ -212,7 +212,7 @@ exports.logout = (req, res) => {
 }
 
 // contoh aksi (uji coba mengambil user_id)
-exports.profile = (req, res) => { //revisi
+exports.profile = (req, res) => { //revisi buku dari history
 	const userId = req.userId
 
 	const sql = `select u.name, u.email, u.image, 
@@ -222,7 +222,8 @@ exports.profile = (req, res) => { //revisi
 				  count(distinct r.rating_id) as list_rating
 				from user u
 				left join bookmarks b on u.user_id = b.user_id
-				left join books bk on bk.books_id = b.books_id
+				left join history h on h.user_id = u.user_id
+				left join books bk on bk.books_id = h.books_id
 				left join rating r on r.user_id = u.user_id
 				where u.user_id = '${userId}'
 				group by u.name, u.email, u.image`
@@ -406,7 +407,7 @@ exports.editProfile = (req, res) => {
 // 	})
 // }
 
-exports.filtering = (req, res) => {
+exports.filtering = (req, res) => { //dari rating tertinggi
 	const { genre } = req.query
 	const userId = req.userId
 	// console.log(userId);
@@ -517,7 +518,7 @@ exports.getHistory = (req, res) => { //books_id dan genre 5 sampe 10 terakhir
 	const sql = `select distinct b.judul, b.image, b.books_id 
 					from books b 
 					join history h on h.books_id = b.books_id
-					where user_id = '${userId}'`
+					where h.user_id = '${userId}'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -882,12 +883,12 @@ exports.preference = (req, res) => {
 		}
 
 		try {
-			// const respon = await axios.post('link cloud run', {genre: genre})
+			const respon = await axios.post('link cloud run', {genre: genre}) //blom fix
 				// .then(response => {
 				// 	console.log(response.data);
 				// })
 
-			// const rekomendasi = respon.data.rekomendasi
+			const rekomendasi = respon.data.rekomendasi
 			// diatas itu books_id
 
 			// await storeData(userId, {genre: genre, rekomendasi: rekomendasi})
