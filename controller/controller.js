@@ -129,9 +129,7 @@ exports.register = (req, res) => {
 							email: email
 						};
 
-						const token = jwt.sign(payload, 'jwtrahasia', {
-							expiresIn: 86400 // aktif selama 24 jam
-						});
+						const token = jwt.sign(payload, 'jwtrahasia');
 
 						return res.status(201).json({
 							data,
@@ -194,9 +192,7 @@ exports.login = (req, res) => {
 			email: user.email
 		}
 
-		const token = jwt.sign(payload, 'jwtrahasia', {
-			expiresIn: 86400 // aktif selama 24 jam 
-		});
+		const token = jwt.sign(payload, 'jwtrahasia');
 
 		let isNewAcc = user.isNewAcc = user.isNewAcc === 'true'
 
@@ -373,9 +369,7 @@ exports.editProfile = (req, res) => {
 						email: email
 					};
 
-					const token = jwt.sign(payload, 'jwtrahasia', {
-						expiresIn: 86400 // aktif selama 24 jam
-					});
+					const token = jwt.sign(payload, 'jwtrahasia');
 
 					res.status(201).json({
 						data,
@@ -865,75 +859,3 @@ exports.getGenres = (req, res) => {
 		});
 	});
 };
-
-exports.preference = (req, res) => {
-	const userId = req.userId
-	const genre = req.body
-
-	if (!genre) {
-		res.status(400).json({
-			statusCode: 'fail',
-			message: 'Mohon pilih genre yang anda suka!'
-		})
-	}
-
-	const sql = `update user set isNewAcc = '${false}' where user_id = '${userId}'`
-
-	db.query(sql, async (err, fields) => {
-		if (err) {
-			return res.status(500).json({
-				statusCode: 'fail',
-				message: err.message
-			})
-		}
-
-		try {
-			// const respon = await axios.post('link cloud run', {
-			// 	genres: genre
-			// })
-
-			// const rekomendasi = respon.data.rekomendasi
-
-			await storeData(userId, genre)
-
-			// await storeData(userId, {genre: genre, recommendations: rekomendasi})
-
-			return res.status(200).json({
-				statusCode: 'Success',
-				message: 'Preferensi berhasil disimpan/diproses',
-				// Rekomendasi: rekomendasi
-			})
-		} catch (err) {
-			res.status(400).json({
-				statusCode: 'fail',
-				message: err.message
-			})
-		}
-	})
-}
-
-exports.getRekomendasi = async (req, res) => {
-	const userId = req.userId
-
-	const book = await getData(userId)
-
-	try {
-		if (book.exists) {
-			return res.status(200).json({
-				statusCode: 'success',
-				message: 'file ditemukan!',
-				rekomendasi: book.data()
-			  })
-		  } else {
-			return res.status(400).json({
-			  statusCode: 'fail',
-			  message: 'File tidak ada!'
-			})
-		  }
-	} catch (err) {
-		res.status(500).json({
-			statusCode: 'fail',
-			message: err.message
-		})
-	}
-}
