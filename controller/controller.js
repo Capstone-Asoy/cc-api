@@ -4,8 +4,7 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken');
 const multer = require('multer')
 const bucket = require('../storage/upload')
-const { Firestore } = require('@google-cloud/firestore');
-const firestore = new Firestore();
+const {storeData, getData} = require('../storage/firestore');
 
 exports.path = (req, res) => {
 	try {
@@ -139,7 +138,8 @@ exports.register = (req, res) => {
 							statusCode: 'Success',
 							message: 'Register berhasil bang',
 							auth: true,
-							token: token
+							token: token,
+							isNewAcc: isNewAcc
 						});
 					}
 				});
@@ -198,7 +198,13 @@ exports.login = (req, res) => {
 			expiresIn: 86400 // aktif selama 24 jam 
 		});
 
-		res.status(200).json({ auth: true, token: token });
+		let isNewAcc = user.isNewAcc = user.isNewAcc === 'true'
+
+		res.status(200).json({ 
+			auth: true, 
+			token: token,
+			isNewAcc: isNewAcc
+		});
 	})
 }
 
@@ -860,7 +866,7 @@ exports.getGenres = (req, res) => {
 	});
 };
 
-exports.prefernce = (req, res) => {
+exports.preference = (req, res) => {
 	const userId = req.userId
 	const genre = req.body
 
@@ -870,32 +876,64 @@ exports.prefernce = (req, res) => {
 			message: 'Mohon pilih genre yang anda suka!'
 		})
 	}
+
 	const sql = `update user set isNewAcc = '${false}' where user_id = '${userId}'`
 
 	db.query(sql, async (err, fields) => {
 		if (err) {
 			return res.status(500).json({
-				statusCode: 'Fail',
+				statusCode: 'fail',
 				message: err.message
-			});
+			})
 		}
 
 		try {
-			// const response = await axios.post('link cloud run', {
-			// 	genres: genres
-			// });
+			// const respon = await axios.post('link cloud run', {
+			// 	genres: genre
+			// })
 
-			await firestore.collection('users').doc(userId).set({
-				genres: genres,
-				// recommendations: recommendations
-			});
+			// const rekomendasi = respon.data.rekomendasi
 
-			return response.data.recommendations;
-		} catch (error) {
-			res.status(500).json({
+			await storeData(userId, genre)
+
+			// await storeData(userId, {genre: genre, recommendations: rekomendasi})
+
+			return res.status(200).json({
+				statusCode: 'Success',
+				message: 'Preferensi berhasil disimpan/diproses',
+				// Rekomendasi: rekomendasi
+			})
+		} catch (err) {
+			res.status(400).json({
 				statusCode: 'fail',
-				message: error.message
+				message: err.message
 			})
 		}
 	})
+}
+
+exports.getRekomendasi = async (req, res) => {
+	const userId = req.userId
+
+	const book = await getData(userId)
+
+	try {
+		if (book.exists) {
+			return res.status(200).json({
+				statusCode: 'success',
+				message: 'file ditemukan!',
+				rekomendasi: book.data()
+			  })
+		  } else {
+			return res.status(400).json({
+			  statusCode: 'fail',
+			  message: 'File tidak ada!'
+			})
+		  }
+	} catch (err) {
+		res.status(500).json({
+			statusCode: 'fail',
+			message: err.message
+		})
+	}
 }
