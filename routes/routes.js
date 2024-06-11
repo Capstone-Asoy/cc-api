@@ -23,8 +23,8 @@ router.post('/detailBook/addRating', cekToken, controller.addRating);
 router.get('/filter', controller.filtering);
 router.get('/getHistory', cekToken, controller.getHistory);
 router.patch('/change-password', cekToken, controller.chgPass);
-// router.post('/preference', cekToken, controller.preference);
-// router.get('/getRekomendasi', cekToken, controller.getRekomendasi);
+router.post('/preference', cekToken, controller.preference);
+router.get('/getRekomendasi', cekToken, controller.getPreference);
 
 router.get('/genres', controller.getGenres);
 

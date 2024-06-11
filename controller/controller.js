@@ -212,7 +212,7 @@ exports.logout = (req, res) => {
 }
 
 // contoh aksi (uji coba mengambil user_id)
-exports.profile = (req, res) => {
+exports.profile = (req, res) => { //revisi
 	const userId = req.userId
 
 	const sql = `select u.name, u.email, u.image, 
@@ -511,7 +511,7 @@ exports.addRating = (req, res) => {
 	})
 }
 
-exports.getHistory = (req, res) => {
+exports.getHistory = (req, res) => { //books_id dan genre 5 sampe 10 terakhir
 	const userId = req.userId
 
 	const sql = `select distinct b.judul, b.image, b.books_id 
@@ -859,3 +859,97 @@ exports.getGenres = (req, res) => {
 		});
 	});
 };
+
+exports.preference = (req, res) => {
+	const userId = req.userId
+	const {genre} = req.body
+
+	if(!genre) {
+		return res.status(400).json({
+			statusCode: 'Fail',
+			message: 'Mohon pilih genre yang anda sukai !!'
+		});
+	}
+
+	const sql = `update user set isNewAcc = '${false}' where user_id = '${userId}'`
+
+	db.query(sql, async (err, fields) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
+
+		try {
+			// const respon = await axios.post('link cloud run', {genre: genre})
+				// .then(response => {
+				// 	console.log(response.data);
+				// })
+
+			// const rekomendasi = respon.data.rekomendasi
+			// diatas itu books_id
+
+			// await storeData(userId, {genre: genre, rekomendasi: rekomendasi})
+
+			for (let i = 0; i < rekomendasi.length; i++) {
+				const element = rekomendasi[i];
+				
+				const sql2 = `select genre from genres g
+							join book_genres bk on bk.genre_id = g.genre_id
+							join books b on b.books_Id = bk.books_id
+							where b.books_id = '${element}`
+
+				db.query(sql2, async (err, fields) => {
+
+					const genrebuku = fields.map(genrebuku => genrebuku.genre)
+					console.log(genrebuku);
+
+					await storeData(userId, {genrebuku})
+
+					return res.status(201).json({
+						statusCode: 'success',
+						message: 'Data berhasil diproses/simpan'
+					})
+					
+				})
+			}
+
+			
+			// await storeData(userId, {genre: genre})
+
+			
+			
+		} catch (error) {
+			res.status(400).json({
+				statusCode: 'fail',
+				message: error.message
+			})
+		}
+	})
+
+}
+
+exports.getPreference = async (req, res) => {
+	const userId = req.userId
+
+	const book = await getData(userId)
+
+	try {
+		if (book.exists) {
+			return res.status(200).json({
+				statusCode: 'success',
+				message: 'berhasil',
+				rekomendasi: book.data()
+			})
+		} else {
+			return res.status(400).json({
+				statusCode: 'fail',
+				message: 'Tidak ada prefrensi',
+			})
+		}
+	} catch (error) {
+		
+	}
+
+}
