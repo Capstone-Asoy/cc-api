@@ -915,9 +915,10 @@ exports.preference = (req, res) => {
 
 			// const rekomendasi = respon.data.rekomendasi
 			// diatas itu books_id
-
 			// await storeData(userId, {genre: genre, rekomendasi: rekomendasi})		
-			await storeData(userId, { genre: genre })
+
+			await storeData(userId, {genre: genre, rekomendasi: [1, 5, 9, 45, 556, 21, 65, 78]}) //untuk testing brooww chessshhh
+			// await storeData(userId, { genre: genre })
 
 			return res.status(200).json({
 				statusCode: 'Success',
