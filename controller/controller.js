@@ -967,15 +967,17 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						const idBook = historyResults.map(row => row.books_id);
 
-						const combinedData = {
+						//axios untuk kirim data history 10 buku terakhir ke ml
+
+						const gabungData = {
 							...book.data(),
 							recentBooks: idBook
 						};
 
 						return res.status(200).json({
 							statusCode: 'success',
-							message: 'Berhasil combine',
-							data: combinedData
+							message: 'Berhasil gabung',
+							data: gabungData
 						});
 					});
 				} else {
