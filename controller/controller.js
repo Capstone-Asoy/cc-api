@@ -599,12 +599,12 @@ exports.detailBook = (req, res) => {
                 };
             });
 
-			const ratings = results.map(result => result.rating); //ambil semua rating dari books_id tanpa ngefilter user_id null atau tidak
-			const totalRating = ratings.reduce((total, rating) => total + rating, 0);
-			const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
+		const ratings = results.map(result => result.rating); //ambil semua rating dari books_id tanpa ngefilter user_id null atau tidak
+		const totalRating = ratings.reduce((total, rating) => total + rating, 0);
+		const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
 			
-			// console.log("Ratings:", ratings);
-			// console.log("Total Rating:", totalRating);
+		// console.log("Ratings:", ratings);
+		// console.log("Total Rating:", totalRating);
 
         const book = {
             bookId: bookData.books_id,
