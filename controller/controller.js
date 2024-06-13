@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken');
 const multer = require('multer')
 const bucket = require('../storage/upload')
+const validator = require('validator')
 const { storeData, getData } = require('../storage/firestore');
 
 exports.path = (req, res) => {
@@ -28,6 +29,12 @@ const upload = multer({
 	}
 });
 
+function validEmail(email) {
+	const domain = email.split('@')[1];
+	const cekDomain = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
+	return cekDomain.includes(domain);
+}
+
 exports.register = (req, res) => {
 	upload.single('image')(req, res, function (err) {
 		if (err) {
@@ -43,6 +50,13 @@ exports.register = (req, res) => {
 			return res.status(400).json({
 				statusCode: 'fail',
 				message: 'Mohon lengkapi data anda!'
+			});
+		}
+
+		if (!validEmail(email)) {
+			return res.status(400).json({
+				statusCode: 'fail',
+				message: 'Format email tidak valid'
 			});
 		}
 
@@ -107,7 +121,7 @@ exports.register = (req, res) => {
 
 				const isNewAcc = true
 
-				const sql = `insert into user (user_id, name, password, image, email, isNewAcc) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}', '${isNewAcc}')`;
+				const sql = `insert into user (user_id, name, password, image, email, isNewAcc, history) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}', '${isNewAcc}', 'false')`;
 
 				db.query(sql, (err, fields) => {
 					if (err) {
@@ -195,11 +209,13 @@ exports.login = (req, res) => {
 		const token = jwt.sign(payload, 'jwtrahasia');
 
 		let isNewAcc = user.isNewAcc = user.isNewAcc === 'true'
+		let history = user.history = user.history === 'true'
 
 		res.status(200).json({
 			auth: true,
 			token: token,
-			isNewAcc: isNewAcc
+			isNewAcc: isNewAcc,
+			haveHistory: history
 		});
 	})
 }
@@ -917,7 +933,7 @@ exports.preference = (req, res) => {
 			// diatas itu books_id
 			// await storeData(userId, {genre: genre, rekomendasi: rekomendasi})		
 
-			await storeData(userId, {genre: genre, rekomendasi: [1, 5, 9, 45, 556, 21, 65, 78]}) //untuk testing brooww chessshhh
+			await storeData(userId, { genre: genre, rekomendasi: [1, 5, 9, 45, 556, 21, 65, 78] }) //untuk testing brooww chessshhh
 			// await storeData(userId, { genre: genre })
 
 			return res.status(200).json({
@@ -942,8 +958,8 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 		const book = await getData(userId);
 
 		if (book.exists) {
-			const sql = `select history from user where user_id = ?`;
-			db.query(sql, [userId], (err, userResults) => {
+			const sql = `select history from user where user_id = '${userId}'`;
+			db.query(sql, (err, userResults) => {
 				if (err) {
 					return res.status(500).json({
 						statusCode: 'fail',
@@ -956,9 +972,9 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 				let history = user.history = user.history === 'true'
 
 				if (history) {
-					const sql2 = `select books_id from history where user_id = '${userId}' order by time desc limit 10`;
+					const sql2 = `select books_id from history where user_id = '${userId}' order by time desc limit 5`;
 
-					db.query(sql2, (err, historyResults) => {
+					db.query(sql2, async (err, historyResults) => {
 						if (err) {
 							return res.status(500).json({
 								statusCode: 'fail',
@@ -968,12 +984,19 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						const idBook = historyResults.map(row => row.books_id);
 
+						// await updateData(userId, {rekomendasi: idBook})		
+
+						// const respon = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
+
 						//axios untuk kirim data history 10 buku terakhir ke ml
 
 						const gabungData = {
 							...book.data(),
 							recentBooks: idBook
 						};
+
+						await storeData(userId, { rekomendasi: gabungData })
+
 
 						return res.status(200).json({
 							statusCode: 'success',
@@ -982,12 +1005,25 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 						});
 					});
 				} else {
-					// Jika user.history tidak bernilai true
-					return res.status(200).json({
-						statusCode: 'success',
-						message: 'Berhasil',
-						data: book.data()
-					});
+					const dataBook = book.data().rekomendasi;
+
+					console.log(dataBook);
+					const query = `select books_id, judul, image from books where books_id in (?)`
+
+					db.query(query, [dataBook], (err, fields) => {
+						if (err) {
+							return res.status(500).json({
+								statusCode: 'fail',
+								message: err.message
+							});
+						}
+
+						return res.status(200).json({
+							statusCode: 'success',
+							message: 'Berhasil',
+							data: fields
+						});
+					})
 				}
 			});
 		} else {

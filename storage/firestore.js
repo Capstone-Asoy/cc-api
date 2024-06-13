@@ -15,4 +15,9 @@ async function getData(id, res) {
   return getRecommendations.doc(id).get()
 }
 
+// async function updateData(id, data) {
+//   const update = firestore.collection('users')
+//   return update.doc(id).update({rekomendasi: Firestore.FieldValue.arrayUnion(...data)})
+// }
+
 module.exports = {storeData, getData}
