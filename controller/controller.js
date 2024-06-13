@@ -56,13 +56,13 @@ exports.register = (req, res) => {
 				});
 			}
 
-			const cekName = fields.some(user => user.name === name)
-			if (cekName) {
-				return res.status(409).json({
-					statusCode: 'fail',
-					message: 'nama telah digunakan'
-				})
-			}
+			// const cekName = fields.some(user => user.name === name)
+			// if (cekName) {
+			// 	return res.status(409).json({
+			// 		statusCode: 'fail',
+			// 		message: 'nama telah digunakan'
+			// 	})
+			// }
 
 			const cekEmail = fields.some(user => user.email === email)
 			if (cekEmail) {
@@ -215,7 +215,7 @@ exports.logout = (req, res) => {
 exports.profile = (req, res) => { //revisi buku dari history
 	const userId = req.userId
 
-	const sql = `select u.name, u.email, u.image, 
+	const sql = `select u.name, u.email, u.image, u.history
                   count(b.bookmark_id) as reading_list,
 				  group_concat(distinct bk.judul separator ', ') as list_judul,
 				  group_concat(distinct bk.image separator ', ') as list_image,
@@ -236,6 +236,23 @@ exports.profile = (req, res) => { //revisi buku dari history
 		})
 
 		const user = fields[0]
+
+		if (user.history) {
+			//lempar ke ml 5 buku terakhir
+			const sql2 = `select books_id from history where user_id = '${userId}' 
+							order by timestamp desc
+							limit 10`
+			db.query(sql2, (err, fields) => {
+				if (err) {
+					return res.status(500).json({
+					  statusCode: 'fail',
+					  message: err.message
+					});
+				  }
+
+				  console.log(fields);
+			})
+		}
 
 		res.status(200).json({
 			statusCode: 'Success',
@@ -267,14 +284,17 @@ exports.editProfile = (req, res) => {
 		const userId = req.userId
 
 		// update data breee
-		const { name, email } = req.body
+		const { name, password } = req.body
 
-		if (!name || !email) {
+		if (!name || !password) {
 			return res.status(404).json({
 				statusCode: 'Fail',
 				message: 'Mohon lengkapi data Anda!'
 			});
 		}
+
+		const hashNewPass = bcrypt.hashSync(password, 5);
+
 
 		const cek = `select user_id, name, email, image from user`
 
@@ -286,21 +306,21 @@ exports.editProfile = (req, res) => {
 				});
 			}
 
-			const cekName = fields.some(user => user.name === name && user.user_id !== userId)
-			if (cekName) {
-				return res.status(409).json({
-					statusCode: 'fail',
-					message: 'nama telah digunakan'
-				})
-			}
+			// const cekName = fields.some(user => user.name === name && user.user_id !== userId)
+			// if (cekName) {
+			// 	return res.status(409).json({
+			// 		statusCode: 'fail',
+			// 		message: 'nama telah digunakan'
+			// 	})
+			// }
 
-			const cekEmail = fields.some(user => user.email === email && user.user_id !== userId)
-			if (cekEmail) {
-				return res.status(409).json({
-					statusCode: 'fail',
-					message: 'email telah digunakan'
-				})
-			}
+			// const cekEmail = fields.some(user => user.email === email && user.user_id !== userId)
+			// if (cekEmail) {
+			// 	return res.status(409).json({
+			// 		statusCode: 'fail',
+			// 		message: 'email telah digunakan'
+			// 	})
+			// }
 
 			const user = fields.find(user => user.user_id === userId);
 
@@ -347,9 +367,9 @@ exports.editProfile = (req, res) => {
 			let sql = ''
 
 			if (publicUrl !== '') {
-				sql = `update user set name = '${name}', email = '${email}', image = '${publicUrl}' where user_id = '${userId}'`
+				sql = `update user set name = '${name}', password = '${hashNewPass}', image = '${publicUrl}' where user_id = '${userId}'`
 			} else {
-				sql = `update user set name = '${name}', email = '${email}' where user_id = '${userId}'`
+				sql = `update user set name = '${name}', password = '${hashNewPass}' where user_id = '${userId}'`
 			}
 
 			db.query(sql, (err, fields) => {
@@ -367,7 +387,7 @@ exports.editProfile = (req, res) => {
 					const payload = {
 						id: req.userId,
 						name: name,
-						email: email
+						email: req.email
 					};
 
 					const token = jwt.sign(payload, 'jwtrahasia');
@@ -883,7 +903,7 @@ exports.preference = (req, res) => {
 		}
 
 		try {
-			const respon = await axios.post('link cloud run', {genre: genre}) //blom fix
+			const respon = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
 				// .then(response => {
 				// 	console.log(response.data);
 				// })
@@ -891,35 +911,7 @@ exports.preference = (req, res) => {
 			const rekomendasi = respon.data.rekomendasi
 			// diatas itu books_id
 
-			// await storeData(userId, {genre: genre, rekomendasi: rekomendasi})
-
-			for (let i = 0; i < rekomendasi.length; i++) {
-				const element = rekomendasi[i];
-				
-				const sql2 = `select genre from genres g
-							join book_genres bk on bk.genre_id = g.genre_id
-							join books b on b.books_Id = bk.books_id
-							where b.books_id = '${element}`
-
-				db.query(sql2, async (err, fields) => {
-
-					const genrebuku = fields.map(genrebuku => genrebuku.genre)
-					console.log(genrebuku);
-
-					await storeData(userId, {genrebuku})
-
-					return res.status(201).json({
-						statusCode: 'success',
-						message: 'Data berhasil diproses/simpan'
-					})
-					
-				})
-			}
-
-			
-			// await storeData(userId, {genre: genre})
-
-			
+			await storeData(userId, {genre: genre, rekomendasi: rekomendasi})		
 			
 		} catch (error) {
 			res.status(400).json({
@@ -931,7 +923,7 @@ exports.preference = (req, res) => {
 
 }
 
-exports.getPreference = async (req, res) => {
+exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung data baru
 	const userId = req.userId
 
 	const book = await getData(userId)
@@ -941,7 +933,6 @@ exports.getPreference = async (req, res) => {
 			return res.status(200).json({
 				statusCode: 'success',
 				message: 'berhasil',
-				rekomendasi: book.data()
 			})
 		} else {
 			return res.status(400).json({
