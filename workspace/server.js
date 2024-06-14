@@ -14,6 +14,13 @@ app.get('/readiness_check', (req, res) => {
 	res.status(200).send('OK');
 });
 
+//endpoint buat server di cloud run
+app.post('/endpoint', (req, res) => {
+	const { userId } = req.body;
+	// console.log(`Received data: userId=${userId}`);
+	res.status(200).send('Data received');
+});
+
 app.listen(PORT, () => {
 	console.log(`Example app listening on port http://localhost:${PORT}`)
 })

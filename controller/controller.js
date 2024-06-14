@@ -6,6 +6,7 @@ const multer = require('multer')
 const bucket = require('../storage/upload')
 // const validator = require('validator')
 const { storeData, getData, updateData } = require('../storage/firestore');
+const axios = require('axios');
 
 exports.path = (req, res) => {
 	try {
@@ -249,6 +250,17 @@ exports.profile = (req, res) => { //revisi buku dari history
 		const user = fields[0]
 
 		const history = user.history = user.history === 'true'
+
+		//mengirim user id ke cloud run
+		const cloudRunURL = process.env.CLOUD_RUN_URL || 'https://link-cloud-run/endpoint'; //url cloud run nanti di taruh di sini
+		const payload = { userId };
+
+		try {
+			await axios.post(cloudRunURL, payload);
+			console.log('User ID berhasil dikirim ke Cloud Run');
+		} catch (error) {
+			console.log('Gagal mengirim user ID ke Cloud Run', error.message);
+		}
 
 		res.status(200).json({
 			statusCode: 'Success',
