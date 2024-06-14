@@ -1046,7 +1046,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 				let history = user.history = user.history === 'true'
 
 				if (history) {
-					const sql2 = `select books_id from history where user_id = '${userId}' order by time desc limit 5`;
+					const sql2 = `select books_id from history where user_id = '${userId}' order by time desc limit 5`
 
 					db.query(sql2, async (err, historyResults) => {
 						if (err) {
@@ -1062,13 +1062,13 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						const booksID = getBooks_id.data.books_id
 						
-						// await updateData(userId, idBook)
+						// await updateData(userId, idBook) //untuk testing
 						await updateData(userId, booksID)
 
-						// const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])];
-						const gabungin = [...new Set([...book.data().rekomendasi, ...booksID])];
+						// const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])] //untuk testing
+						const gabungin = [...new Set([...book.data().rekomendasi, ...booksID])]
 
-						// console.log("dari gabungin", gabungin);
+						// console.log("dari gabungin", gabungin) //untuk testing
 
 						const query = `select books_id, judul, image from books where books_id in (?)`
 
