@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken');
 const multer = require('multer')
 const bucket = require('../storage/upload')
-const validator = require('validator')
-const { storeData, getData } = require('../storage/firestore');
+// const validator = require('validator')
+const { storeData, getData, updateData } = require('../storage/firestore');
 
 exports.path = (req, res) => {
 	try {
@@ -231,7 +231,7 @@ exports.logout = (req, res) => {
 exports.profile = (req, res) => { //revisi buku dari history
 	const userId = req.userId
 
-	const sql = `select u.name, u.email, u.image, u.history
+	const sql = `select u.name, u.email, u.image, u.history,
                   count(b.bookmark_id) as reading_list,
 				  group_concat(distinct bk.judul separator ', ') as list_judul,
 				  group_concat(distinct bk.image separator ', ') as list_image,
@@ -253,6 +253,8 @@ exports.profile = (req, res) => { //revisi buku dari history
 
 		const user = fields[0]
 
+		const history = user.history = user.history === 'true'
+
 		res.status(200).json({
 			statusCode: 'Success',
 			message: 'Data user berhasil ditampilkan',
@@ -263,6 +265,7 @@ exports.profile = (req, res) => { //revisi buku dari history
 			list_judul: user.list_judul ? user.list_judul.split(',').map(list_judul => list_judul.trim()) : [],
 			list_image: user.list_image ? user.list_image.split(',').map(list_image => list_image.trim()) : [],
 			list_rating: user.list_rating,
+			haveHistory: history
 			// list_image: user.list_image
 		})
 	})
@@ -674,6 +677,40 @@ exports.detailBook = (req, res) => {
 						res.status(200).json(book);
 					});
 				}
+
+				const history = `select books_id from history where user_id = '${req.userId}'`
+
+				db.query(history, (err, fields) => {
+					if (err) {
+						return res.status(500).json({
+							statusCode: 'Fail',
+							message: err.message
+						});
+					}
+
+					const hvHistory = fields.map(row => row.books_id)
+
+					console.log(hvHistory);
+					console.log(hvHistory.length);
+
+					if (hvHistory.length >= 5) {
+						const updateHistory = `update user set history = 'true' where user_id = '${req.userId}'`
+
+						db.query(updateHistory, (err, fields) => {
+							if (err) {
+								return res.status(500).json({
+									statusCode: 'Fail',
+									message: err.message
+								});
+							}
+
+							// res.status(201).json({
+							// 	statusCode: 'success',
+							// 	message: 'History berhasil di update'
+							// })
+						})
+					}
+				})
 			});
 		} else {
 			res.status(200).json(book);
@@ -990,19 +1027,17 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						//axios untuk kirim data history 10 buku terakhir ke ml
 
-						const gabungData = {
-							...book.data(),
-							recentBooks: idBook
-						};
+						await updateData(userId, idBook) //harus array bukan objek
 
-						await storeData(userId, { rekomendasi: gabungData })
+						const combinedBookIds = [...new Set([...book.data().rekomendasi, ...idBook])];
 
 
-						return res.status(200).json({
-							statusCode: 'success',
-							message: 'Berhasil gabung',
-							data: gabungData
-						});
+
+						// return res.status(200).json({
+						// 	statusCode: 'success',
+						// 	message: 'Berhasil gabung',
+						// 	// data: gabungData
+						// });
 					});
 				} else {
 					const dataBook = book.data().rekomendasi;
@@ -1024,7 +1059,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 							data: fields
 						});
 					})
-				}
+				}				
 			});
 		} else {
 			return res.status(400).json({
