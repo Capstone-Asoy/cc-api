@@ -21,11 +21,10 @@ exports.path = (req, res) => {
 	}
 }
 
-// ketika user melakuakn register
 const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: {
-		fileSize: 2 * 1024 * 1024 // max file 2 MB
+		fileSize: 2 * 1024 * 1024 // 2 MB
 	}
 });
 
@@ -165,7 +164,6 @@ exports.register = (req, res) => {
 	})
 }
 
-// ketika user melakukan login
 exports.login = (req, res) => {
 	const { email, password } = req.body
 
@@ -220,14 +218,12 @@ exports.login = (req, res) => {
 	})
 }
 
-// ketika user melakukan logout
 exports.logout = (req, res) => {
 	res.status(200).json({
 		message: "Anda berhasil logout"
 	})
 }
 
-// contoh aksi (uji coba mengambil user_id)
 exports.profile = (req, res) => { //revisi buku dari history
 	const userId = req.userId
 
@@ -270,9 +266,6 @@ exports.profile = (req, res) => { //revisi buku dari history
 	})
 }
 
-
-
-//belom valid
 exports.editProfile = (req, res) => {
 	upload.single('image')(req, res, async function (err) {
 		if (err) {
@@ -409,25 +402,6 @@ exports.editProfile = (req, res) => {
 	})
 }
 
-// belom connect ke machine learning
-// exports.getBook = (req, res) => {
-// 	const sql = `select * from books`
-
-// 	db.query(sql, (err, fields) => {
-// 		if (err) return res.status(500).json({
-// 			statusCode: 'Fail',
-// 			message: err.message
-// 		})
-
-// 		// console.log(fields);
-// 		res.status(200).json({
-// 			statusCode: 'Success',
-// 			message: "Data berhasil ditampilkan",
-// 			data: { fields }
-// 		})
-// 	})
-// }
-
 exports.filtering = (req, res) => { //dari rating tertinggi
 	const { genre } = req.query
 	const userId = req.userId
@@ -550,6 +524,40 @@ exports.addRating = (req, res) => {
 							message: err.message
 						})
 
+						const history = `select books_id from history where user_id = '${userId}'`
+
+						db.query(history, (err, fields) => {
+							if (err) {
+								return res.status(500).json({
+									statusCode: 'Fail',
+									message: err.message
+								});
+							}
+
+							const hvHistory = fields.map(row => row.books_id)
+
+							// console.log(hvHistory);
+							// console.log(hvHistory.length);
+
+							if (hvHistory.length >= 5) {
+								const updateHistory = `update user set history = 'true' where user_id = '${userId}'`
+
+								db.query(updateHistory, (err, fields) => {
+									if (err) {
+										return res.status(500).json({
+											statusCode: 'Fail',
+											message: err.message
+										});
+									}
+
+									// res.status(201).json({
+									// 	statusCode: 'success',
+									// 	message: 'History berhasil di update'
+									// })
+								})
+							}
+						})
+
 						// if (fields.affectedRows) {
 						// 	console.log(fields.affectedRows);
 						// }
@@ -642,10 +650,10 @@ exports.detailBook = (req, res) => {
 
 		const bookData = results[0];
 		const reviews = results
-			.filter(review => review.user_name) // Hanya tampilkan review dengan user_name yang tidak null
+			.filter(review => review.user_name) 
 			.map(review => {
 				const reviewDate = new Date(review.review_date);
-				const formattedDate = reviewDate.toISOString().split('T')[0]; // Format jadi YYYY-MM-DD
+				const formattedDate = reviewDate.toISOString().split('T')[0]; 
 				return {
 					userName: review.user_name,
 					rating: review.rating,
@@ -654,7 +662,7 @@ exports.detailBook = (req, res) => {
 				};
 			});
 
-		const ratings = results.map(result => result.rating); //ambil semua rating dari books_id tanpa ngefilter user_id null atau tidak
+		const ratings = results.map(result => result.rating); 
 		const totalRating = ratings.reduce((total, rating) => total + rating, 0);
 		const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
 
@@ -723,8 +731,8 @@ exports.detailBook = (req, res) => {
 
 					const hvHistory = fields.map(row => row.books_id)
 
-					console.log(hvHistory);
-					console.log(hvHistory.length);
+					// console.log(hvHistory);
+					// console.log(hvHistory.length);
 
 					if (hvHistory.length >= 5) {
 						const updateHistory = `update user set history = 'true' where user_id = '${req.userId}'`
@@ -762,7 +770,6 @@ exports.addBookmark = (req, res) => {
 		});
 	}
 
-	// Periksa apakah buku dengan books_id ada
 	const sqlCheckBook = `SELECT * FROM books WHERE books_id = ?`;
 	db.query(sqlCheckBook, [books_id], (err, bookResult) => {
 		if (err) {
@@ -779,7 +786,6 @@ exports.addBookmark = (req, res) => {
 			});
 		}
 
-		// Periksa apakah bookmark untuk books_id sudah ada untuk user
 		const sqlCheckBookmark = `SELECT * FROM bookmarks WHERE user_id = ? AND books_id = ?`;
 		db.query(sqlCheckBookmark, [user_id, books_id], (err, bookmarkResult) => {
 			if (err) {
@@ -796,7 +802,6 @@ exports.addBookmark = (req, res) => {
 				});
 			}
 
-			// Jika buku ditemukan dan bookmark belum ada, menambahkan bookmark
 			const bookmark_id = nanoid(10);
 			const sql = `INSERT INTO bookmarks (bookmark_id, user_id, books_id) VALUES (?, ?, ?)`;
 
@@ -1064,7 +1069,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])];
 
-
+						console.log("dari gabungin", gabungin);
 
 						// return res.status(200).json({
 						// 	statusCode: 'success',
@@ -1075,7 +1080,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 				} else {
 					const dataBook = book.data().rekomendasi;
 
-					console.log(dataBook);
+					console.log("dari dataBook", dataBook);
 					const query = `select books_id, judul, image from books where books_id in (?)`
 
 					db.query(query, [dataBook], (err, fields) => {
@@ -1092,7 +1097,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 							data: fields
 						});
 					})
-				}				
+				}
 			});
 		} else {
 			return res.status(400).json({
