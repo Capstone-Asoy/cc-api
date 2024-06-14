@@ -505,10 +505,12 @@ exports.addRating = (req, res) => {
 			})
 		}
 
-		const cekUser = `select user_id, books_id from rating`
+		const cekUser = `select user_id, books_id from rating where user_id = '${userId}' and books_id = '${books_id}'`
 
 		db.query(cekUser, (err, fields) => {
-			const udahAda = fields.some(rating => rating.user_id === userId && rating.books_id === books_id)
+			const udahAda = fields.length > 0
+
+			// console.log(udahAda);
 
 			let sql
 			if (udahAda) {
@@ -522,6 +524,38 @@ exports.addRating = (req, res) => {
 				if (err) return res.status(500).json({
 					statusCode: 'fail',
 					message: err.message
+				})
+
+				const cek = `select user_id, books_id from history where user_id = '${userId}'`
+
+				db.query(cek, (err, cekHistory) => {
+					if (err) return res.status(500).json({
+						statusCode: 'fail',
+						message: err.message
+					})
+
+					let update = ``
+
+					const ada = cekHistory.length > 0
+
+					if (ada) {
+						update = `update history set time = current_timestamp where user_id = '${userId}'`
+					} else {
+						const historyId = nanoid(8)
+						update = `insert into history (history_id, user_id, books_id) values ('${historyId}', '${userId}', '${books_id}')`
+					}
+
+					db.query(update, (err, fields) => {
+						if (err) return res.status(500).json({
+							statusCode: 'fail',
+							message: err.message
+						})
+
+						// if (fields.affectedRows) {
+						// 	console.log(fields.affectedRows);
+						// }
+					})
+
 				})
 
 				res.status(201).json({
@@ -1029,7 +1063,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						await updateData(userId, idBook) //harus array bukan objek
 
-						const combinedBookIds = [...new Set([...book.data().rekomendasi, ...idBook])];
+						const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])];
 
 
 
