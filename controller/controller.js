@@ -281,7 +281,7 @@ exports.editProfile = (req, res) => {
 		const { name, password } = req.body
 
 		if (!name || !password) {
-			return res.status(404).json({
+			return res.status(400).json({
 				statusCode: 'Fail',
 				message: 'Mohon lengkapi data Anda!'
 			});
@@ -1012,7 +1012,7 @@ exports.preference = (req, res) => {
 
 			return res.status(200).json({
 				statusCode: 'Success',
-				message: 'Preferensi berhasil disimpan/diproses',
+				message: 'Preferensi akan diproses',
 				// Rekomendasi: rekomendasi
 			})
 		} catch (error) {
@@ -1082,7 +1082,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 							return res.status(200).json({
 								statusCode: 'success',
-								message: 'Berhasil gabungin',
+								message: 'Berhasil combine',
 								data: fields
 							});
 						})
