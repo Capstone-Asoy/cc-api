@@ -999,17 +999,16 @@ exports.preference = (req, res) => {
 		}
 
 		try {
-			// const respon = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
+			const respon = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
 			// .then(response => {
 			// 	console.log(response.data);
 			// })
 
-			// const rekomendasi = respon.data.rekomendasi
+			const rekomendasi = respon.data.rekomendasi
 			// diatas itu books_id
-			// await storeData(userId, {genre: genre, rekomendasi: rekomendasi})		
+			await storeData(userId, {genre: genre, rekomendasi: rekomendasi})		
 
-			await storeData(userId, { genre: genre, rekomendasi: [1, 5, 9, 45, 556, 21, 65, 78] }) //untuk testing brooww chessshhh
-			// await storeData(userId, { genre: genre })
+			// await storeData(userId, { genre: genre, rekomendasi: [1, 5, 9, 45, 556, 21, 65, 78] }) //untuk testing brooww chessshhh
 
 			return res.status(200).json({
 				statusCode: 'Success',
@@ -1059,28 +1058,39 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						const idBook = historyResults.map(row => row.books_id);
 
-						// await updateData(userId, {rekomendasi: idBook})		
+						const getBooks_id = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
 
-						// const respon = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
+						const booksID = getBooks_id.data.books_id
+						
+						// await updateData(userId, idBook)
+						await updateData(userId, booksID)
 
-						//axios untuk kirim data history 10 buku terakhir ke ml
+						// const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])];
+						const gabungin = [...new Set([...book.data().rekomendasi, ...booksID])];
 
-						await updateData(userId, idBook) //harus array bukan objek
+						// console.log("dari gabungin", gabungin);
 
-						const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])];
+						const query = `select books_id, judul, image from books where books_id in (?)`
 
-						console.log("dari gabungin", gabungin);
+						db.query(query, [gabungin], (err, fields) => {
+							if (err) {
+								return res.status(500).json({
+									statusCode: 'fail',
+									message: err.message
+								});
+							}
 
-						// return res.status(200).json({
-						// 	statusCode: 'success',
-						// 	message: 'Berhasil gabung',
-						// 	// data: gabungData
-						// });
+							return res.status(200).json({
+								statusCode: 'success',
+								message: 'Berhasil gabungin',
+								data: fields
+							});
+						})
 					});
 				} else {
 					const dataBook = book.data().rekomendasi;
 
-					console.log("dari dataBook", dataBook);
+					// console.log("dari dataBook", dataBook);
 					const query = `select books_id, judul, image from books where books_id in (?)`
 
 					db.query(query, [dataBook], (err, fields) => {
