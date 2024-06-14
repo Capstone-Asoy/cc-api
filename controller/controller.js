@@ -979,10 +979,10 @@ exports.getGenres = (req, res) => {
 
 exports.preference = (req, res) => {
 	const userId = req.userId
-	const { genre } = req.body
+	const { selectedGenres } = req.body
 
-	if (!genre) {
-		return res.status(400).json({
+	if (!selectedGenres) {
+		res.status(400).json({
 			statusCode: 'Fail',
 			message: 'Mohon pilih genre yang anda sukai !!'
 		});
@@ -992,25 +992,25 @@ exports.preference = (req, res) => {
 
 	db.query(sql, async (err, fields) => {
 		if (err) {
-			return res.status(500).json({
+			res.status(500).json({
 				statusCode: 'Fail',
 				message: err.message
 			});
 		}
 
 		try {
-			const respon = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
+			// const respon = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
 			// .then(response => {
 			// 	console.log(response.data);
 			// })
 
-			const rekomendasi = respon.data.rekomendasi
+			// const rekomendasi = respon.data.rekomendasi
 			// diatas itu books_id
-			await storeData(userId, {genre: genre, rekomendasi: rekomendasi})		
+			// await storeData(userId, {genre: genre, rekomendasi: rekomendasi})		
 
-			// await storeData(userId, { genre: genre, rekomendasi: [1, 5, 9, 45, 556, 21, 65, 78] }) //untuk testing brooww chessshhh
+			await storeData(userId, { genre: selectedGenres, rekomendasi: [1, 5, 9, 45, 556, 21, 65, 78] }) //untuk testing brooww chessshhh
 
-			return res.status(200).json({
+			res.status(200).json({
 				statusCode: 'Success',
 				message: 'Preferensi akan diproses',
 				// Rekomendasi: rekomendasi
@@ -1058,15 +1058,15 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						const idBook = historyResults.map(row => row.books_id);
 
-						const getBooks_id = await axios.post('link cloud run', {user_id: userId, books_id: idBook}) //blom fix
+						// const getBooks_id = await axios.post('link cloud run', {user_id: userId, books_id: idBook}) //blom fix
 
-						const booksID = getBooks_id.data.books_id
+						// const booksID = getBooks_id.data.books_id
 						
-						// await updateData(userId, idBook) //untuk testing
-						await updateData(userId, booksID)
+						await updateData(userId, idBook) //untuk testing
+						// await updateData(userId, booksID)
 
-						// const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])] //untuk testing
-						const gabungin = [...new Set([...book.data().rekomendasi, ...booksID])]
+						const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])] //untuk testing
+						// const gabungin = [...new Set([...book.data().rekomendasi, ...booksID])]
 
 						// console.log("dari gabungin", gabungin) //untuk testing
 
