@@ -232,12 +232,11 @@ exports.profile = (req, res) => { //revisi buku dari history
 	const userId = req.userId
 
 	const sql = `select u.name, u.email, u.image, u.history,
-                  count(b.bookmark_id) as reading_list,
+                  (select count(b.bookmark_id) from bookmarks b where b.user_id = u.user_id) as reading_list,
 				  group_concat(distinct bk.judul separator ', ') as list_judul,
 				  group_concat(distinct bk.image separator ', ') as list_image,
 				  count(distinct r.rating_id) as list_rating
 				from user u
-				left join bookmarks b on u.user_id = b.user_id
 				left join history h on h.user_id = u.user_id
 				left join books bk on bk.books_id = h.books_id
 				left join rating r on r.user_id = u.user_id
