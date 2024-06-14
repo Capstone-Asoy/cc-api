@@ -1058,7 +1058,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						const idBook = historyResults.map(row => row.books_id);
 
-						const getBooks_id = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
+						const getBooks_id = await axios.post('link cloud run', {user_id: userId, books_id: idBook}) //blom fix
 
 						const booksID = getBooks_id.data.books_id
 						
