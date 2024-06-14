@@ -526,7 +526,7 @@ exports.addRating = (req, res) => {
 					message: err.message
 				})
 
-				const cek = `select user_id, books_id from history where user_id = '${userId}'`
+				const cek = `select user_id, books_id from history where user_id = '${userId}' and  books_id = '${books_id}'`
 
 				db.query(cek, (err, cekHistory) => {
 					if (err) return res.status(500).json({
