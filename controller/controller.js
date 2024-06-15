@@ -890,36 +890,44 @@ exports.getBookmarks = (req, res) => {
 };
 
 exports.searchBooks = (req, res) => {
-	const { keyword } = req.query;
+    const { keyword } = req.query;
 
-	if (!keyword) {
-		return res.status(400).json({
-			statusCode: 'Fail',
-			message: 'Keyword harus disertakan'
-		});
-	}
+    if (!keyword) {
+        return res.status(400).json({
+            statusCode: 'Fail',
+            message: 'Keyword harus disertakan'
+        });
+    }
 
-	let sql = `SELECT books_id, image, judul, penulis FROM books WHERE judul LIKE ? OR penulis LIKE ?`;
-	let params = [`%${keyword}%`, `%${keyword}%`];
+    let keywords = keyword.split(' ');
+    let sql = `SELECT books_id, image, judul, penulis FROM books WHERE 1=1`;
+    let params = [];
 
-	db.query(sql, params, (err, results) => {
-		if (err) {
-			return res.status(500).json({
-				statusCode: 'Fail',
-				message: err.message
-			});
-		}
+    keywords.forEach(kw => {
+        sql += ` AND (judul LIKE ? OR penulis LIKE ?)`;
+        params.push(`%${kw}%`, `%${kw}%`);
+    });
 
-		if (results.length === 0) {
-			return res.status(204).json({
-			});
-		}
+    db.query(sql, params, (err, results) => {
+        if (err) {
+            return res.status(500).json({
+                statusCode: 'Fail',
+                message: err.message
+            });
+        }
 
-		res.status(200).json({
-			results: results
-		});
-	});
+        if (results.length === 0) {
+            return res.status(204).json({
+				message: 'No books found'
+            });
+        }
+
+        res.status(200).json({
+            results: results
+        });
+    });
 };
+
 
 exports.chgPass = (req, res) => {
 	const userId = req.userId
