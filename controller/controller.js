@@ -678,9 +678,6 @@ exports.detailBook = (req, res) => {
 		const totalRating = ratings.reduce((total, rating) => total + rating, 0);
 		const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
 
-		// console.log("Ratings:", ratings);
-		// console.log("Total Rating:", totalRating);
-
 		const book = {
 			bookId: bookData.books_id,
 			title: bookData.judul,
@@ -761,10 +758,24 @@ exports.detailBook = (req, res) => {
 							// 	statusCode: 'success',
 							// 	message: 'History berhasil di update'
 							// })
-						})
+						});
 					}
-				})
+				});
 			});
+
+			const bookmarkCheckSql = `SELECT * FROM bookmarks WHERE books_id = ? AND user_id = ?`;
+			db.query(bookmarkCheckSql, [book.bookId, req.userId], (err, result) => {
+				if (err) {
+					return res.status(500).json({
+						statusCode: 'Fail',
+						message: err.message
+					});
+				}
+
+				book.isBookmarked = result.length > 0 ? true : false;
+				res.status(200).json(book);
+			});
+			
 		} else {
 			res.status(200).json(book);
 		}
@@ -878,11 +889,6 @@ exports.getBookmarks = (req, res) => {
 			});
 		}
 
-		if (result.length === 0) {
-			return res.status(204).json({
-			});
-		}
-
 		res.status(200).json({
 			bookmarks: result
 		});
@@ -913,12 +919,6 @@ exports.searchBooks = (req, res) => {
             return res.status(500).json({
                 statusCode: 'Fail',
                 message: err.message
-            });
-        }
-
-        if (results.length === 0) {
-            return res.status(204).json({
-				message: 'No books found'
             });
         }
 
