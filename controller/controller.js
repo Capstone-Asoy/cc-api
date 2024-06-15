@@ -890,27 +890,17 @@ exports.getBookmarks = (req, res) => {
 };
 
 exports.searchBooks = (req, res) => {
-	const { title, author } = req.query;
+	const { keyword } = req.query;
 
-	if (!title && !author) {
+	if (!keyword) {
 		return res.status(400).json({
 			statusCode: 'Fail',
-			message: 'Setidaknya salah satu dari title atau author harus disertakan'
+			message: 'Keyword harus disertakan'
 		});
 	}
 
-	let sql = `SELECT books_id, image, judul, penulis FROM books WHERE 1=1`;
-	let params = [];
-
-	if (title) {
-		sql += ` AND judul LIKE ?`;
-		params.push(`%${title}%`);
-	}
-
-	if (author) {
-		sql += ` AND penulis LIKE ?`;
-		params.push(`%${author}%`);
-	}
+	let sql = `SELECT books_id, image, judul, penulis FROM books WHERE judul LIKE ? OR penulis LIKE ?`;
+	let params = [`%${keyword}%`, `%${keyword}%`];
 
 	db.query(sql, params, (err, results) => {
 		if (err) {
@@ -930,8 +920,6 @@ exports.searchBooks = (req, res) => {
 		});
 	});
 };
-
-
 
 exports.chgPass = (req, res) => {
 	const userId = req.userId
