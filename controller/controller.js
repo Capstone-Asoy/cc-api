@@ -180,8 +180,8 @@ exports.login = (req, res) => {
 	db.query(sql, (err, data) => {
 		if (err) return res.status(500).json({
 			statusCode: 'Fail',
-			// message: err.message
-			message: 'Gagal login!'
+			message: err.message
+			// message: 'Gagal login!'
 		})
 
 		if (data.length === 0) return res.status(404).json({
