@@ -878,11 +878,6 @@ exports.getBookmarks = (req, res) => {
 			});
 		}
 
-		if (result.length === 0) {
-			return res.status(204).json({
-			});
-		}
-
 		res.status(200).json({
 			bookmarks: result
 		});
@@ -913,12 +908,6 @@ exports.searchBooks = (req, res) => {
             return res.status(500).json({
                 statusCode: 'Fail',
                 message: err.message
-            });
-        }
-
-        if (results.length === 0) {
-            return res.status(204).json({
-				message: 'No books found'
             });
         }
 
