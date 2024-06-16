@@ -455,7 +455,7 @@ exports.filtering = async (req, res) => { //dari rating tertinggi
 	if (getBook.exists) {
 		const buku = getBook.data().rekomendasi
 
-		console.log(buku);
+		// console.log(buku);
 
 		const sql = `SELECT b.books_id, b.judul, b.image 
 					FROM books b 
@@ -719,10 +719,10 @@ exports.detailBook = (req, res) => {
 
 		const bookData = results[0];
 		const reviews = results
-			.filter(review => review.user_name) 
+			.filter(review => review.user_name)
 			.map(review => {
 				const reviewDate = new Date(review.review_date);
-				const formattedDate = reviewDate.toISOString().split('T')[0]; 
+				const formattedDate = reviewDate.toISOString().split('T')[0];
 				return {
 					userName: review.user_name,
 					rating: review.rating,
@@ -731,7 +731,7 @@ exports.detailBook = (req, res) => {
 				};
 			});
 
-		const ratings = results.map(result => result.rating); 
+		const ratings = results.map(result => result.rating);
 		const totalRating = ratings.reduce((total, rating) => total + rating, 0);
 		const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
 
@@ -785,9 +785,12 @@ exports.detailBook = (req, res) => {
 					});
 				}
 
-				const history = `select books_id from history where user_id = '${req.userId}'`
+				const historyQuery = `UPDATE user SET history = 'true' WHERE user_id = '${req.userId}'
+											AND (SELECT COUNT(books_id) FROM history 
+											WHERE user_id = '${req.userId}'
+											) >= 5`
 
-				db.query(history, (err, fields) => {
+				db.query(historyQuery, (err, result) => {
 					if (err) {
 						return res.status(500).json({
 							statusCode: 'Fail',
@@ -795,29 +798,12 @@ exports.detailBook = (req, res) => {
 						});
 					}
 
-					const hvHistory = fields.map(row => row.books_id)
 
-					// console.log(hvHistory);
-					// console.log(hvHistory.length);
-
-					if (hvHistory.length >= 5) {
-						const updateHistory = `update user set history = 'true' where user_id = '${req.userId}'`
-
-						db.query(updateHistory, (err, fields) => {
-							if (err) {
-								return res.status(500).json({
-									statusCode: 'Fail',
-									message: err.message
-								});
-							}
-
-							// res.status(201).json({
-							// 	statusCode: 'success',
-							// 	message: 'History berhasil di update'
-							// })
-						});
-					}
+					// if (result.affectedRows > 0) {
+					// 	// console.log('nambah history');
+					// } 
 				});
+
 			});
 
 			const bookmarkCheckSql = `SELECT * FROM bookmarks WHERE books_id = ? AND user_id = ?`;
@@ -832,7 +818,7 @@ exports.detailBook = (req, res) => {
 				book.isBookmarked = result.length > 0 ? true : false;
 				res.status(200).json(book);
 			});
-			
+
 		} else {
 			res.status(200).json(book);
 		}
@@ -903,29 +889,29 @@ exports.addBookmark = (req, res) => {
 };
 
 exports.deleteBookmark = (req, res) => {
-    const { books_id } = req.params;
-    const userId = req.userId;
+	const { books_id } = req.params;
+	const userId = req.userId;
 
-    const sql = `DELETE FROM bookmarks WHERE books_id = ? AND user_id = ?`;
-    db.query(sql, [books_id, userId], (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message
-            });
-        }
+	const sql = `DELETE FROM bookmarks WHERE books_id = ? AND user_id = ?`;
+	db.query(sql, [books_id, userId], (err, result) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                statusCode: 'Fail',
-                message: 'Bookmark tidak ditemukan atau tidak dimiliki oleh pengguna ini'
-            });
-        }
+		if (result.affectedRows === 0) {
+			return res.status(404).json({
+				statusCode: 'Fail',
+				message: 'Bookmark tidak ditemukan atau tidak dimiliki oleh pengguna ini'
+			});
+		}
 
-        res.status(200).json({
-            message: 'Bookmark berhasil dihapus'
-        });
-    });
+		res.status(200).json({
+			message: 'Bookmark berhasil dihapus'
+		});
+	});
 };
 
 exports.getBookmarks = (req, res) => {
@@ -953,36 +939,36 @@ exports.getBookmarks = (req, res) => {
 };
 
 exports.searchBooks = (req, res) => {
-    const { keyword } = req.query;
+	const { keyword } = req.query;
 
-    if (!keyword) {
-        return res.status(400).json({
-            statusCode: 'Fail',
-            message: 'Keyword harus disertakan'
-        });
-    }
+	if (!keyword) {
+		return res.status(400).json({
+			statusCode: 'Fail',
+			message: 'Keyword harus disertakan'
+		});
+	}
 
-    let keywords = keyword.split(' ');
-    let sql = `SELECT books_id, image, judul, penulis FROM books WHERE 1=1`;
-    let params = [];
+	let keywords = keyword.split(' ');
+	let sql = `SELECT books_id, image, judul, penulis FROM books WHERE 1=1`;
+	let params = [];
 
-    keywords.forEach(kw => {
-        sql += ` AND (judul LIKE ? OR penulis LIKE ?)`;
-        params.push(`%${kw}%`, `%${kw}%`);
-    });
+	keywords.forEach(kw => {
+		sql += ` AND (judul LIKE ? OR penulis LIKE ?)`;
+		params.push(`%${kw}%`, `%${kw}%`);
+	});
 
-    db.query(sql, params, (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                statusCode: 'Fail',
-                message: err.message
-            });
-        }
+	db.query(sql, params, (err, results) => {
+		if (err) {
+			return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			});
+		}
 
-        res.status(200).json({
-            results: results
-        });
-    });
+		res.status(200).json({
+			results: results
+		});
+	});
 };
 
 
@@ -1096,9 +1082,54 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 	try {
 		const book = await getData(userId);
 
-		if (book.exists) {
-			const sql = `SELECT history FROM user WHERE user_id = '${userId}'`;
-			db.query(sql, (err, userResults) => {
+		if (!book.exists) {
+			return res.status(400).json({
+				statusCode: 'fail',
+				message: 'Tidak ada preferensi',
+			});
+		}
+
+		const rekomendasi = book.data().rekomendasi.map(Number)
+
+		const sql = `SELECT u.history, (SELECT GROUP_CONCAT(books_id) 
+						FROM history 
+						WHERE user_id = '${userId}' 
+						ORDER BY time desc  
+						LIMIT 5) AS recent
+						FROM user u
+						WHERE user_id = '${userId}'`
+
+		db.query(sql, async (err, hasil) => {
+			if (err) {
+				return res.status(500).json({
+					statusCode: 'fail',
+					message: err.message
+				});
+			}
+
+			const user = hasil[0];
+			const history = user.history === 'true';
+			const recent = user.recent ? user.recent.split(',').map(Number) : []
+
+			console.log(recent);
+
+			let dataBuku = rekomendasi;
+
+			if (history) {
+				// const getBooks_id = await axios.post('link cloud run', {user_id: userId, books_id: idBook}) //blom fix
+
+				// const booksID = getBooks_id.data.books_id
+
+				await updateData(userId, recent); // untuk testing
+				// await updateData(userId, booksID); 
+
+				dataBuku = [...new Set([...rekomendasi, ...recent])];
+				console.log("databuku: ",dataBuku);
+			}
+
+			const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`;
+
+			db.query(query, [dataBuku], (err, fields) => {
 				if (err) {
 					return res.status(500).json({
 						statusCode: 'fail',
@@ -1106,86 +1137,20 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 					});
 				}
 
-				const user = userResults[0];
-
-				let history = user.history = user.history === 'true'
-
-				if (history) {
-					const sql2 = `SELECT books_id FROM history WHERE user_id = '${userId}' ORDER BY time desc limit 5`
-
-					db.query(sql2, async (err, historyResults) => {
-						if (err) {
-							return res.status(500).json({
-								statusCode: 'fail',
-								message: err.message
-							});
-						}
-
-						const idBook = historyResults.map(row => row.books_id);
-
-						// const getBooks_id = await axios.post('link cloud run', {user_id: userId, books_id: idBook}) //blom fix
-
-						// const booksID = getBooks_id.data.books_id
-						
-						await updateData(userId, idBook) //untuk testing
-						// await updateData(userId, booksID)
-
-						const gabungin = [...new Set([...book.data().rekomendasi, ...idBook])] //untuk testing
-						// const gabungin = [...new Set([...book.data().rekomendasi, ...booksID])]
-
-						// console.log("dari gabungin", gabungin) //untuk testing
-
-						const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`
-
-						db.query(query, [gabungin], (err, fields) => {
-							if (err) {
-								return res.status(500).json({
-									statusCode: 'fail',
-									message: err.message
-								});
-							}
-
-							return res.status(200).json({
-								statusCode: 'success',
-								message: 'Berhasil combine',
-								data: fields
-							});
-						})
-					});
-				} else {
-					const dataBook = book.data().rekomendasi
-
-					// console.log("dari dataBook", dataBook);
-					const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`
-
-					db.query(query, [dataBook], (err, fields) => {
-						if (err) {
-							return res.status(500).json({
-								statusCode: 'fail',
-								message: err.message
-							});
-						}
-
-						return res.status(200).json({
-							statusCode: 'success',
-							message: 'Berhasil',
-							data: fields
-						});
-					})
-				}
+				return res.status(200).json({
+					statusCode: 'success',
+					message: 'Berhasil',
+					data: fields
+				});
 			});
-		} else {
-			return res.status(400).json({
-				statusCode: 'fail',
-				message: 'Tidak ada preferensi',
-			});
-		}
+		});
 	} catch (error) {
 		return res.status(400).json({
 			statusCode: 'fail',
 			message: error.message,
 		});
 	}
+
 
 
 }
