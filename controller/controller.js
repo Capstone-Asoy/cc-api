@@ -60,7 +60,7 @@ exports.register = (req, res) => {
 			});
 		}
 
-		const cek = `select name, email from user`
+		const cek = `SELECT name, email FROM user`
 
 		db.query(cek, async (err, fields) => {
 			if (err) {
@@ -121,7 +121,7 @@ exports.register = (req, res) => {
 
 				const isNewAcc = true
 
-				const sql = `insert into user (user_id, name, password, image, email, isNewAcc, history) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}', '${isNewAcc}', 'false')`;
+				const sql = `INSERT INTO user (user_id, name, password, image, email, isNewAcc, history) VALUES ('${user_id}', '${name}', '${hashPass}', '${publicUrl}', '${email}', '${isNewAcc}', 'false')`;
 
 				db.query(sql, (err, fields) => {
 					if (err) {
@@ -175,7 +175,7 @@ exports.login = (req, res) => {
 		})
 	}
 
-	const sql = `select * from user where email = '${email}'`
+	const sql = `SELECT * FROM user WHERE email = '${email}'`
 
 	db.query(sql, (err, data) => {
 		if (err) return res.status(500).json({
@@ -228,17 +228,17 @@ exports.logout = (req, res) => {
 exports.profile = (req, res) => { //revisi buku dari history
 	const userId = req.userId
 
-	const sql = `select u.name, u.email, u.image, u.history,
-                  (select count(b.bookmark_id) from bookmarks b where b.user_id = u.user_id) as reading_list,
-				  group_concat(distinct bk.judul separator ', ') as list_judul,
-				  group_concat(distinct bk.image separator ', ') as list_image,
-				  count(distinct r.rating_id) as list_rating
-				from user u
-				left join history h on h.user_id = u.user_id
-				left join books bk on bk.books_id = h.books_id
-				left join rating r on r.user_id = u.user_id
-				where u.user_id = '${userId}'
-				group by u.name, u.email, u.image`
+	const sql = `SELECT u.name, u.email, u.image, u.history,
+                  (SELECT COUNT(b.bookmark_id) FROM bookmarks b WHERE b.user_id = u.user_id) as reading_list,
+				  GROUP_CONCAT(DISTINCT bk.judul separator ', ') as list_judul,
+				  GROUP_CONCAT(DISTINCT bk.image separator ', ') as list_image,
+				  COUNT(DISTINCT r.rating_id) as list_rating
+				FROM user u
+				LEFT JOIN history h on h.user_id = u.user_id
+				LEFT JOIN books bk on bk.books_id = h.books_id
+				LEFT JOIN rating r on r.user_id = u.user_id
+				WHERE u.user_id = '${userId}'
+				GROUP BY u.name, u.email, u.image`
 
 	db.query(sql, async (err, fields) => {
 		if (err) return res.status(500).json({
@@ -302,7 +302,7 @@ exports.editProfile = (req, res) => {
 		const hashNewPass = bcrypt.hashSync(password, 5);
 
 
-		const cek = `select user_id, name, email, image from user`
+		const cek = `SELECT user_id, name, email, image FROM user`
 
 		db.query(cek, async (err, fields) => {
 			if (err) {
@@ -373,9 +373,9 @@ exports.editProfile = (req, res) => {
 			let sql = ''
 
 			if (publicUrl !== '') {
-				sql = `update user set name = '${name}', password = '${hashNewPass}', image = '${publicUrl}' where user_id = '${userId}'`
+				sql = `UPDATE user SET name = '${name}', password = '${hashNewPass}', image = '${publicUrl}' WHERE user_id = '${userId}'`
 			} else {
-				sql = `update user set name = '${name}', password = '${hashNewPass}' where user_id = '${userId}'`
+				sql = `UPDATE user SET name = '${name}', password = '${hashNewPass}' WHERE user_id = '${userId}'`
 			}
 
 			db.query(sql, (err, fields) => {
@@ -414,9 +414,10 @@ exports.editProfile = (req, res) => {
 	})
 }
 
-exports.filtering = (req, res) => { //dari rating tertinggi
+exports.filtering = async (req, res) => { //dari rating tertinggi
 	const { genre } = req.query
 	const userId = req.userId
+	const getBook = await getData(userId);
 	// console.log(userId);
 
 	if (!genre) {
@@ -426,30 +427,61 @@ exports.filtering = (req, res) => { //dari rating tertinggi
 		})
 	}
 
-	const sql = `select b.books_id, b.judul, b.image 
-					from books b 
-					join book_genres bg on bg.books_id = b.books_id
-					join genres g on g.genre_id = bg.genre_id
-					where g.genre = '${genre}' or g.genre like '%${genre}%'`
+	if (getBook.exists) {
+		const buku = getBook.data().rekomendasi
 
-	db.query(sql, (err, fields) => {
-		if (err) return res.status(500).json({
-			statusCode: 'Fail',
-			message: err.message
-		})
+		// console.log(buku);
 
-		if (fields.length === 0) return res.status(400).json({
-			statusCode: 'Fail',
-			message: "Buku dengan genre tersebut tidak ditemukan!"
-		})
+		const sql = `SELECT b.books_id, b.judul, b.image 
+					FROM books b 
+					JOIN book_genres bg on bg.books_id = b.books_id
+					JOIN genres g on g.genre_id = bg.genre_id
+					WHERE g.genre = '${genre}' and b.books_id in (?)`
 
-		// console.log(fields);
-		res.status(200).json({
-			statusCode: 'Success',
-			message: "Data berhasil ditampilkan (menggunakan query)",
-			fields
+		db.query(sql, [buku], (err, fields) => {
+			if (err) return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			})
+
+			if (fields.length === 0) return res.status(400).json({
+				statusCode: 'Fail',
+				message: "Buku dengan genre tersebut tidak ditemukan!"
+			})
+
+			// console.log(fields);
+			res.status(200).json({
+				statusCode: 'Success',
+				message: "Data berhasil ditampilkan (menggunakan query)",
+				fields
+			})
 		})
-	})
+	} else {
+		const sql = `SELECT b.books_id, b.judul, b.image 
+					FROM books b 
+					JOIN book_genres bg on bg.books_id = b.books_id
+					JOIN genres g on g.genre_id = bg.genre_id
+					WHERE g.genre = '${genre}' or g.genre like '%${genre}%'`
+
+		db.query(sql, (err, fields) => {
+			if (err) return res.status(500).json({
+				statusCode: 'Fail',
+				message: err.message
+			})
+
+			if (fields.length === 0) return res.status(400).json({
+				statusCode: 'Fail',
+				message: "Buku dengan genre tersebut tidak ditemukan!"
+			})
+
+			// console.log(fields);
+			res.status(200).json({
+				statusCode: 'Success',
+				message: "Data berhasil ditampilkan (menggunakan query)",
+				fields
+			})
+		})
+	}
 }
 
 exports.addRating = (req, res) => {
@@ -472,7 +504,7 @@ exports.addRating = (req, res) => {
 		})
 	}
 
-	const cek = `select books_id from books`
+	const cek = `SELECT books_id from books`
 
 	db.query(cek, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -490,7 +522,7 @@ exports.addRating = (req, res) => {
 			})
 		}
 
-		const cekUser = `select user_id, books_id from rating where user_id = '${userId}' and books_id = '${books_id}'`
+		const cekUser = `SELECT user_id, books_id FROM rating WHERE user_id = '${userId}' AND books_id = '${books_id}'`
 
 		db.query(cekUser, (err, fields) => {
 			const udahAda = fields.length > 0
@@ -500,9 +532,9 @@ exports.addRating = (req, res) => {
 			let sql
 			if (udahAda) {
 				// console.log(userId, 'udah ada: ' + udahAda);
-				sql = `update rating set rating = '${rating}', review = '${review}' where user_id = '${userId}' and books_id = '${books_id}'`
+				sql = `UPDATE rating SET rating = '${rating}', review = '${review}' WHERE user_id = '${userId}' and books_id = '${books_id}'`
 			} else {
-				sql = `insert into rating (rating_id, user_id, books_id, rating, review) values ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
+				sql = `INSERT INTO rating (rating_id, user_id, books_id, rating, review) VALUES ('${rating_id}', '${userId}', '${books_id}', ${rating}, '${review}')`
 			}
 
 			db.query(sql, (err, fields) => {
@@ -511,7 +543,7 @@ exports.addRating = (req, res) => {
 					message: err.message
 				})
 
-				const cek = `select user_id, books_id from history where user_id = '${userId}' and  books_id = '${books_id}'`
+				const cek = `SELECT user_id, books_id FROM history WHERE user_id = '${userId}' and  books_id = '${books_id}'`
 
 				db.query(cek, (err, cekHistory) => {
 					if (err) return res.status(500).json({
@@ -524,10 +556,10 @@ exports.addRating = (req, res) => {
 					const ada = cekHistory.length > 0
 
 					if (ada) {
-						update = `update history set time = current_timestamp where user_id = '${userId}'`
+						update = `UPDATE history set time = current_timestamp WHERE user_id = '${userId}'`
 					} else {
 						const historyId = nanoid(8)
-						update = `insert into history (history_id, user_id, books_id) values ('${historyId}', '${userId}', '${books_id}')`
+						update = `INSERT INTO history (history_id, user_id, books_id) VALUES ('${historyId}', '${userId}', '${books_id}')`
 					}
 
 					db.query(update, (err, fields) => {
@@ -536,7 +568,7 @@ exports.addRating = (req, res) => {
 							message: err.message
 						})
 
-						const history = `select books_id from history where user_id = '${userId}'`
+						const history = `SELECT books_id FROM history WHERE user_id = '${userId}'`
 
 						db.query(history, (err, fields) => {
 							if (err) {
@@ -552,7 +584,7 @@ exports.addRating = (req, res) => {
 							// console.log(hvHistory.length);
 
 							if (hvHistory.length >= 5) {
-								const updateHistory = `update user set history = 'true' where user_id = '${userId}'`
+								const updateHistory = `UPDATE user SET history = 'true' WHERE user_id = '${userId}'`
 
 								db.query(updateHistory, (err, fields) => {
 									if (err) {
@@ -590,10 +622,10 @@ exports.addRating = (req, res) => {
 exports.getHistory = (req, res) => { //books_id dan genre 5 sampe 10 terakhir
 	const userId = req.userId
 
-	const sql = `select distinct b.judul, b.image, b.books_id 
-					from books b 
-					join history h on h.books_id = b.books_id
-					where h.user_id = '${userId}'`
+	const sql = `SELECT distinct b.judul, b.image, b.books_id 
+					FROM books b 
+					JOIN history h on h.books_id = b.books_id
+					WHERE h.user_id = '${userId}'`
 
 	db.query(sql, (err, fields) => {
 		if (err) return res.status(500).json({
@@ -996,7 +1028,7 @@ exports.preference = (req, res) => {
 		});
 	}
 
-	const sql = `update user set isNewAcc = '${false}' where user_id = '${userId}'`
+	const sql = `UPDATE user SET isNewAcc = '${false}' WHERE user_id = '${userId}'`
 
 	db.query(sql, async (err, fields) => {
 		if (err) {
@@ -1040,7 +1072,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 		const book = await getData(userId);
 
 		if (book.exists) {
-			const sql = `select history from user where user_id = '${userId}'`;
+			const sql = `SELECT history FROM user WHERE user_id = '${userId}'`;
 			db.query(sql, (err, userResults) => {
 				if (err) {
 					return res.status(500).json({
@@ -1054,7 +1086,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 				let history = user.history = user.history === 'true'
 
 				if (history) {
-					const sql2 = `select books_id from history where user_id = '${userId}' order by time desc limit 5`
+					const sql2 = `SELECT books_id FROM history WHERE user_id = '${userId}' ORDER BY time desc limit 5`
 
 					db.query(sql2, async (err, historyResults) => {
 						if (err) {
@@ -1078,7 +1110,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 						// console.log("dari gabungin", gabungin) //untuk testing
 
-						const query = `select books_id, judul, image from books where books_id in (?)`
+						const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`
 
 						db.query(query, [gabungin], (err, fields) => {
 							if (err) {
@@ -1096,10 +1128,10 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 						})
 					});
 				} else {
-					const dataBook = book.data().rekomendasi;
+					const dataBook = book.data().rekomendasi
 
 					// console.log("dari dataBook", dataBook);
-					const query = `select books_id, judul, image from books where books_id in (?)`
+					const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`
 
 					db.query(query, [dataBook], (err, fields) => {
 						if (err) {
