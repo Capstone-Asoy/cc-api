@@ -903,11 +903,11 @@ exports.addBookmark = (req, res) => {
 };
 
 exports.deleteBookmark = (req, res) => {
-	const { bookmarks_id } = req.params;
+	const { books_id } = req.params;
 	const user_id = req.userId;
 
-	const sql = `DELETE FROM bookmarks WHERE bookmark_id = ? AND user_id = ?`;
-	db.query(sql, [bookmarks_id, user_id], (err, result) => {
+	const sql = `DELETE FROM bookmarks WHERE books_id = ? AND user_id = ?`;
+	db.query(sql, [books_id, user_id], (err, result) => {
 		if (err) {
 			return res.status(500).json({
 				statusCode: 'Fail',
