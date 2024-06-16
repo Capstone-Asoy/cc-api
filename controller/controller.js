@@ -769,7 +769,7 @@ exports.detailBook = (req, res) => {
 								message: err.message
 							});
 						}
-						res.status(200).json(book);
+						// res.status(200).json(book);
 					});
 				} else {
 					const history_id = nanoid(8);
@@ -781,7 +781,7 @@ exports.detailBook = (req, res) => {
 								message: err.message
 							});
 						}
-						res.status(200).json(book);
+						// res.status(200).json(book);
 					});
 				}
 
@@ -986,35 +986,35 @@ exports.searchBooks = (req, res) => {
 };
 
 
-exports.chgPass = (req, res) => {
-	const userId = req.userId
+// exports.chgPass = (req, res) => {
+// 	const userId = req.userId
 
-	const { newPass } = req.body
+// 	const { newPass } = req.body
 
-	if (!newPass) {
-		return res.status(400).json({
-			statusCode: 'fail',
-			message: 'Mohon lengkapi Password anda!'
-		})
-	}
+// 	if (!newPass) {
+// 		return res.status(400).json({
+// 			statusCode: 'fail',
+// 			message: 'Mohon lengkapi Password anda!'
+// 		})
+// 	}
 
-	const hashNewPass = bcrypt.hashSync(newPass, 5);
+// 	const hashNewPass = bcrypt.hashSync(newPass, 5);
 
-	const sql = `update user set password = '${hashNewPass}' where user_id = '${userId}'`
+// 	const sql = `update user set password = '${hashNewPass}' where user_id = '${userId}'`
 
-	db.query(sql, (err, fields) => {
-		if (err) return res.status(500).json({
-			statusCode: 'fail',
-			message: err.message
-		})
+// 	db.query(sql, (err, fields) => {
+// 		if (err) return res.status(500).json({
+// 			statusCode: 'fail',
+// 			message: err.message
+// 		})
 
-		res.status(201).json({
-			statusCode: 'Success',
-			message: 'Password berhasil diperbarui'
-		})
-	})
+// 		res.status(201).json({
+// 			statusCode: 'Success',
+// 			message: 'Password berhasil diperbarui'
+// 		})
+// 	})
 
-}
+// }
 
 exports.getGenres = (req, res) => {
 	const sql = `SELECT DISTINCT genre FROM genres`;
