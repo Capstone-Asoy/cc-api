@@ -903,29 +903,30 @@ exports.addBookmark = (req, res) => {
 };
 
 exports.deleteBookmark = (req, res) => {
-	const { books_id } = req.params;
-	const user_id = req.userId;
+    const { books_id } = req.params;
+    const userId = req.userId;
+	
+    const sql = `DELETE FROM bookmarks WHERE books_id = ? AND user_id = ?`;
+    db.query(sql, [books_id, userId], (err, result) => {
+        if (err) {
+            console.error(`Error executing query: ${err.message}`);
+            return res.status(500).json({
+                statusCode: 'Fail',
+                message: err.message
+            });
+        }
 
-	const sql = `DELETE FROM bookmarks WHERE books_id = ? AND user_id = ?`;
-	db.query(sql, [books_id, user_id], (err, result) => {
-		if (err) {
-			return res.status(500).json({
-				statusCode: 'Fail',
-				message: err.message
-			});
-		}
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                statusCode: 'Fail',
+                message: 'Bookmark tidak ditemukan atau tidak dimiliki oleh pengguna ini'
+            });
+        }
 
-		if (result.affectedRows === 0) {
-			return res.status(404).json({
-				statusCode: 'Fail',
-				message: 'Bookmark tidak ditemukan atau tidak dimiliki oleh pengguna ini'
-			});
-		}
-
-		res.status(200).json({
-			message: 'Bookmark berhasil dihapus'
-		});
-	});
+        res.status(200).json({
+            message: 'Bookmark berhasil dihapus'
+        });
+    });
 };
 
 exports.getBookmarks = (req, res) => {
