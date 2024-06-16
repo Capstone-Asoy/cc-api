@@ -230,7 +230,7 @@ exports.profile = (req, res) => { //revisi buku dari history
 
 	const sql = `SELECT u.name, u.email, u.image, u.history,
                   (SELECT COUNT(b.bookmark_id) FROM bookmarks b WHERE b.user_id = u.user_id) as reading_list,
-				  GROUP_CONCAT(DISTINCT bk.judul separator ', ') as list_judul,
+				  GROUP_CONCAT(DISTINCT REPLACE(bk.judul, ',', '') separator ', ') as list_judul,
 				  GROUP_CONCAT(DISTINCT bk.image separator ', ') as list_image,
 				  COUNT(DISTINCT r.rating_id) as list_rating
 				FROM user u
