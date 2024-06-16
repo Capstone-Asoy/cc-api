@@ -455,7 +455,7 @@ exports.filtering = async (req, res) => { //dari rating tertinggi
 	if (getBook.exists) {
 		const buku = getBook.data().rekomendasi
 
-		// console.log(buku);
+		console.log(buku);
 
 		const sql = `SELECT b.books_id, b.judul, b.image 
 					FROM books b 
