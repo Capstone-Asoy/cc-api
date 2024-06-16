@@ -427,6 +427,31 @@ exports.filtering = async (req, res) => { //dari rating tertinggi
 		})
 	}
 
+	// const sql = `SELECT b.books_id, b.judul, b.image 
+	// 				FROM books b 
+	// 				JOIN book_genres bg on bg.books_id = b.books_id
+	// 				JOIN genres g on g.genre_id = bg.genre_id
+	// 				WHERE g.genre = '${genre}' or g.genre like '%${genre}%'`
+
+	// db.query(sql, (err, fields) => {
+	// 	if (err) return res.status(500).json({
+	// 		statusCode: 'Fail',
+	// 		message: err.message
+	// 	})
+
+	// 	if (fields.length === 0) return res.status(400).json({
+	// 		statusCode: 'Fail',
+	// 		message: "Buku dengan genre tersebut tidak ditemukan!"
+	// 	})
+
+	// 	// console.log(fields);
+	// 	res.status(200).json({
+	// 		statusCode: 'Success',
+	// 		message: "Data berhasil ditampilkan (menggunakan query)",
+	// 		fields
+	// 	})
+	// })
+
 	if (getBook.exists) {
 		const buku = getBook.data().rekomendasi
 
@@ -907,7 +932,7 @@ exports.getBookmarks = (req, res) => {
 	const userId = req.userId;
 
 	const sql = `
-        SELECT bk.bookmark_id, b.judul, b.image, b.penulis 
+        SELECT bk.bookmark_id, b.judul, b.image, b.penulis, b.books_id 
         FROM bookmarks bk
         JOIN books b ON bk.books_id = b.books_id
         WHERE bk.user_id = ?
