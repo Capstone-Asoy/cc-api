@@ -416,9 +416,6 @@ exports.editProfile = (req, res) => {
 
 exports.filtering = async (req, res) => { //dari rating tertinggi
 	const { genre } = req.query
-	const userId = req.userId
-	const getBook = await getData(userId);
-	// console.log(userId);
 
 	if (!genre) {
 		return res.status(404).json({
@@ -427,86 +424,32 @@ exports.filtering = async (req, res) => { //dari rating tertinggi
 		})
 	}
 
-	// const sql = `SELECT b.books_id, b.judul, b.image 
-	// 				FROM books b 
-	// 				JOIN book_genres bg on bg.books_id = b.books_id
-	// 				JOIN genres g on g.genre_id = bg.genre_id
-	// 				WHERE g.genre = '${genre}' or g.genre like '%${genre}%'`
-
-	// db.query(sql, (err, fields) => {
-	// 	if (err) return res.status(500).json({
-	// 		statusCode: 'Fail',
-	// 		message: err.message
-	// 	})
-
-	// 	if (fields.length === 0) return res.status(400).json({
-	// 		statusCode: 'Fail',
-	// 		message: "Buku dengan genre tersebut tidak ditemukan!"
-	// 	})
-
-	// 	// console.log(fields);
-	// 	res.status(200).json({
-	// 		statusCode: 'Success',
-	// 		message: "Data berhasil ditampilkan (menggunakan query)",
-	// 		fields
-	// 	})
-	// })
-
-	if (getBook.exists) {
-		const buku = getBook.data().rekomendasi
-
-		// console.log(buku);
-
-		const sql = `SELECT b.books_id, b.judul, b.image 
+	const sql = `SELECT b.books_id, b.judul, b.image 
 					FROM books b 
 					JOIN book_genres bg on bg.books_id = b.books_id
 					JOIN genres g on g.genre_id = bg.genre_id
-					WHERE g.genre = '${genre}' and b.books_id in (?)`
+					WHERE g.genre = '${genre}'
+					ORDER BY RAND()
+					LIMIT 30`
 
-		db.query(sql, [buku], (err, fields) => {
-			if (err) return res.status(500).json({
-				statusCode: 'Fail',
-				message: err.message
-			})
-
-			if (fields.length === 0) return res.status(400).json({
-				statusCode: 'Fail',
-				message: "Buku dengan genre tersebut tidak ditemukan!"
-			})
-
-			// console.log(fields);
-			res.status(200).json({
-				statusCode: 'Success',
-				message: "Data berhasil ditampilkan (menggunakan query)",
-				fields
-			})
+	db.query(sql, (err, fields) => {
+		if (err) return res.status(500).json({
+			statusCode: 'Fail',
+			message: err.message
 		})
-	} else {
-		const sql = `SELECT b.books_id, b.judul, b.image 
-					FROM books b 
-					JOIN book_genres bg on bg.books_id = b.books_id
-					JOIN genres g on g.genre_id = bg.genre_id
-					WHERE g.genre = '${genre}' or g.genre like '%${genre}%'`
 
-		db.query(sql, (err, fields) => {
-			if (err) return res.status(500).json({
-				statusCode: 'Fail',
-				message: err.message
-			})
-
-			if (fields.length === 0) return res.status(400).json({
-				statusCode: 'Fail',
-				message: "Buku dengan genre tersebut tidak ditemukan!"
-			})
-
-			// console.log(fields);
-			res.status(200).json({
-				statusCode: 'Success',
-				message: "Data berhasil ditampilkan (menggunakan query)",
-				fields
-			})
+		if (fields.length === 0) return res.status(400).json({
+			statusCode: 'Fail',
+			message: "Buku dengan genre tersebut tidak ditemukan!"
 		})
-	}
+
+		// console.log(fields);
+		res.status(200).json({
+			statusCode: 'Success',
+			message: "Data berhasil ditampilkan (menggunakan query)",
+			fields
+		})
+	})
 }
 
 exports.addRating = (req, res) => {
@@ -1031,7 +974,7 @@ exports.preference = (req, res) => {
 		}
 
 		try {
-			// const respon = await axios.post('link cloud run', {user_id: userId, genre: genre}) //blom fix
+			// const respon = await axios.post('link cloud run', {user_id: userId, genre: selectedGenres}) //blom fix
 			// .then(response => {
 			// 	console.log(response.data);
 			// })
@@ -1091,6 +1034,8 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 			const user = hasil[0];
 			const history = user.history === 'true';
 			const recent = user.recent ? user.recent.split(',').map(Number) : []
+
+
 
 			// console.log(recent);
 
