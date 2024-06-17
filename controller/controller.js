@@ -682,7 +682,7 @@ exports.detailBook = (req, res) => {
     SELECT u.name AS name, r.rating, r.review, DATE(r.date) AS review_date
     FROM rating r
     LEFT JOIN user u ON r.user_id = u.user_id
-    WHERE r.books_id = ?
+    WHERE r.books_id = ? and r.user_id != 'null'
     ORDER BY r.date DESC`
 
 	db.query(bookSql, [id, id], (err, bookResults) => {
