@@ -670,45 +670,20 @@ exports.detailBook = (req, res) => {
 	const { id } = req.params;
 
 	const bookSql = `
-    SELECT 
-        b.books_id,
-        b.image,
-        b.judul,
-        b.penulis,
-        b.deskripsi,
-        b.penerbit,
-        b.tahun_terbit,
-        b.jml_halaman,
-        b.ISBN,
+    SELECT b.books_id, b.image, b.judul, b.penulis, b.deskripsi, b.penerbit, b.tahun_terbit, b.jml_halaman, b.ISBN,
         GROUP_CONCAT(g.genre SEPARATOR ', ') AS genre
-    FROM 
-        books b
-    LEFT JOIN 
-        book_genres bg ON b.books_id = bg.books_id
-    LEFT JOIN 
-        genres g ON bg.genre_id = g.genre_id
-    WHERE 
-        b.books_id = ? OR b.judul = ?
-    GROUP BY 
-        b.books_id
-    LIMIT 1
-`;
+    FROM books b
+    LEFT JOIN book_genres bg ON b.books_id = bg.books_id
+    LEFT JOIN genres g ON bg.genre_id = g.genre_id
+    WHERE b.books_id = ? OR b.judul = ?
+    GROUP BY b.books_id LIMIT 1`
 
 	const getReview = `
-    SELECT 
-        u.name AS name,
-        r.rating,
-        r.review,
-        DATE(r.date) AS review_date
-    FROM 
-        rating r
-    LEFT JOIN 
-        user u ON r.user_id = u.user_id
-    WHERE 
-        r.books_id = ?
-    ORDER BY 
-        r.date DESC
-`;
+    SELECT u.name AS name, r.rating, r.review, DATE(r.date) AS review_date
+    FROM rating r
+    LEFT JOIN user u ON r.user_id = u.user_id
+    WHERE r.books_id = ?
+    ORDER BY r.date DESC`
 
 	db.query(bookSql, [id, id], (err, bookResults) => {
 		if (err) {
@@ -785,6 +760,8 @@ exports.detailBook = (req, res) => {
 									message: err.message
 								});
 							}
+							// res.status(200).json(book);
+
 						});
 					} else {
 						const history_id = nanoid(8);
@@ -796,6 +773,7 @@ exports.detailBook = (req, res) => {
 									message: err.message
 								});
 							}
+							// res.status(200).json(book);
 						});
 					}
 
@@ -811,6 +789,9 @@ exports.detailBook = (req, res) => {
 								message: err.message
 							});
 						}
+						// if (result.affectedRows > 0) {
+						// 	// console.log('nambah history');
+						// } 
 					});
 
 				});
@@ -1161,7 +1142,4 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 			message: error.message,
 		});
 	}
-
-
-
 }
