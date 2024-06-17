@@ -676,14 +676,14 @@ exports.detailBook = (req, res) => {
     LEFT JOIN book_genres bg ON b.books_id = bg.books_id
     LEFT JOIN genres g ON bg.genre_id = g.genre_id
     WHERE b.books_id = ? OR b.judul = ?
-    GROUP BY b.books_id LIMIT 1`
+    GROUP BY b.books_id LIMIT 1`;
 
 	const getReview = `
     SELECT u.name AS name, r.rating, r.review, DATE(r.date) AS review_date
     FROM rating r
     LEFT JOIN user u ON r.user_id = u.user_id
-    WHERE r.books_id = ? and r.user_id != 'null'
-    ORDER BY r.date DESC`
+    WHERE r.books_id = ?
+    ORDER BY r.date DESC`;
 
 	db.query(bookSql, [id, id], (err, bookResults) => {
 		if (err) {
@@ -701,7 +701,6 @@ exports.detailBook = (req, res) => {
 		}
 
 		const bookData = bookResults[0];
-		const genres = bookData.genre ? bookData.genre.split(',').map(genre => genre.trim()) : [];
 
 		db.query(getReview, [bookData.books_id], (err, hasilReview) => {
 			if (err) {
@@ -715,9 +714,9 @@ exports.detailBook = (req, res) => {
 				const reviewDate = new Date(review.review_date);
 				const formattedDate = reviewDate.toISOString().split('T')[0];
 				return {
-					userName: review.name,
+					userName: review.name || 'Anonim',
 					rating: review.rating,
-					review: review.review,
+					review: review.review || 'Bukunya bagus banget!!',
 					date: formattedDate
 				};
 			});
@@ -725,6 +724,7 @@ exports.detailBook = (req, res) => {
 			const ratings = hasilReview.map(result => result.rating);
 			const totalRating = ratings.reduce((total, rating) => total + rating, 0);
 			const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
+			const genres = bookData.genre ? bookData.genre.split(',').map(genre => genre.trim()) : [];
 
 			const book = {
 				bookId: bookData.books_id,
@@ -760,8 +760,6 @@ exports.detailBook = (req, res) => {
 									message: err.message
 								});
 							}
-							// res.status(200).json(book);
-
 						});
 					} else {
 						const history_id = nanoid(8);
@@ -773,27 +771,18 @@ exports.detailBook = (req, res) => {
 									message: err.message
 								});
 							}
-							// res.status(200).json(book);
 						});
 					}
 
-					const historyQuery = `UPDATE user SET history = 'true' WHERE user_id = '${req.userId}'
-                                            AND (SELECT COUNT(books_id) FROM history 
-                                            WHERE user_id = '${req.userId}'
-                                            ) >= 5`
-
-					db.query(historyQuery, (err, result) => {
+					const historyQuery = `UPDATE user SET history = 'true' WHERE user_id = ? AND (SELECT COUNT(books_id) FROM history WHERE user_id = ?) >= 5`;
+					db.query(historyQuery, [req.userId, req.userId], (err) => {
 						if (err) {
 							return res.status(500).json({
 								statusCode: 'Fail',
 								message: err.message
 							});
 						}
-						// if (result.affectedRows > 0) {
-						// 	// console.log('nambah history');
-						// } 
 					});
-
 				});
 
 				const bookmarkCheckSql = `SELECT * FROM bookmarks WHERE books_id = ? AND user_id = ?`;
@@ -805,15 +794,15 @@ exports.detailBook = (req, res) => {
 						});
 					}
 
-					book.isBookmarked = result.length > 0 ? true : false;
+					book.isBookmarked = result.length > 0;
 					res.status(200).json(book);
 				});
-
 			} else {
 				res.status(200).json(book);
 			}
 		});
 	});
+
 
 };
 
