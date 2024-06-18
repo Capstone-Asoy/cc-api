@@ -1027,11 +1027,16 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
         						ORDER BY time DESC  
         						LIMIT 5
     						) AS terbaru
-						) AS recent
+						) AS recent,
+						COUNT(b.bookmark_id) AS bookmarks,
+						IF(COUNT(b.bookmark_id) >= 5, 
+							GROUP_CONCAT(b.books_id ORDER BY b.time DESC LIMIT 5), 
+							NULL
+						) AS recent_bookmarks
 					FROM user u
 					LEFT JOIN bookmarks b ON u.user_id = b.user_id
-					WHERE user_id = '${userId}'
-					GROUP BY u.user_id;`
+					WHERE u.user_id = '${userId}'
+					GROUP BY u.user_id;`;
 
 		db.query(sql, async (err, hasil) => {
 			if (err) {
