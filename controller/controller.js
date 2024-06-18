@@ -1026,13 +1026,8 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
         						WHERE user_id = '${userId}'
         						ORDER BY time DESC  
         						LIMIT 5
-    						) AS recent_books
-						) AS recent,
-						COUNT(b.bookmark_id) AS bookmarks,
-						IF(COUNT(b.bookmark_id) >= 5, 
-							GROUP_CONCAT(b.books_id ORDER BY b.time DESC LIMIT 5), 
-							NULL
-						) AS recent_bookmarks
+    						) AS terbaru
+						) AS recent
 					FROM user u
 					LEFT JOIN bookmarks b ON u.user_id = b.user_id
 					WHERE user_id = '${userId}'
@@ -1052,7 +1047,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 			const bookmarks = user.bookmarks ? parseInt(user.bookmarks) : 0;
             const recentBookmarks = user.recent_bookmarks ? user.recent_bookmarks.split(',').map(Number) : [];
 
-			// console.log(recent);
+			console.log(recent);
 
 			let dataBuku = rekomendasi;
 			let dariHistory;
