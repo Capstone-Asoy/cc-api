@@ -25,7 +25,7 @@ Sebelum memulai, pastikan Anda memiliki:
 1. Clone repositori ini:
 
     ```sh
-    git clone https://github.com/username/repository.git
+    git clone https://github.com/Capstone-Asoy/cc-api.git
     cd repository
     ```
 
