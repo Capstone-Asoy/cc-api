@@ -252,15 +252,15 @@ exports.profile = (req, res) => { //revisi buku dari history
 		const history = user.history = user.history === 'true'
 
 		//mengirim user id ke cloud run
-		const cloudRunURL = process.env.CLOUD_RUN_URL || 'https://link-cloud-run/endpoint'; //url cloud run nanti di taruh di sini
-		const payload = { userId };
+		// const cloudRunURL = process.env.CLOUD_RUN_URL || 'https://link-cloud-run/endpoint'; //url cloud run nanti di taruh di sini
+		// const payload = { userId };
 
-		try {
-			await axios.post(cloudRunURL, payload);
-			console.log('User ID berhasil dikirim ke Cloud Run');
-		} catch (error) {
-			console.log('Gagal mengirim user ID ke Cloud Run', error.message);
-		}
+		// try {
+		// 	await axios.post(cloudRunURL, payload);
+		// 	console.log('User ID berhasil dikirim ke Cloud Run');
+		// } catch (error) {
+		// 	console.log('Gagal mengirim user ID ke Cloud Run', error.message);
+		// }
 
 		res.status(200).json({
 			statusCode: 'Success',
@@ -1027,9 +1027,16 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
         						ORDER BY time DESC  
         						LIMIT 5
     						) AS terbaru
-						) AS recent
+						) AS recent,
+						COUNT(b.bookmark_id) AS bookmarks,
+						IF(COUNT(b.bookmark_id) >= 5, 
+							GROUP_CONCAT(b.books_id ORDER BY b.time DESC LIMIT 5), 
+							NULL
+						) AS recent_bookmarks
 					FROM user u
-					WHERE user_id = '${userId}'`
+					LEFT JOIN bookmarks b ON u.user_id = b.user_id
+					WHERE u.user_id = '${userId}'
+					GROUP BY u.user_id;`;
 
 		db.query(sql, async (err, hasil) => {
 			if (err) {
@@ -1042,11 +1049,14 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 			const user = hasil[0];
 			const history = user.history === 'true';
 			const recent = user.recent ? user.recent.split(',').map(Number) : []
+			const bookmarks = user.bookmarks ? parseInt(user.bookmarks) : 0;
+            const recentBookmarks = user.recent_bookmarks ? user.recent_bookmarks.split(',').map(Number) : [];
 
 			// console.log(recent);
 
 			let dataBuku = rekomendasi;
-			let dariHistory
+			let dariHistory;
+			let dariBookmarks;
 
 			if (history) {
 				// console.log(recent);
@@ -1074,8 +1084,31 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 				// console.log(dariHistory);
 			} else {
-				dariHistory = []
+				dariHistory = [];
 			}
+
+			if (bookmarks >= 5) {
+                const getBooks_id = await axios.post('https://model-hen5ogfoeq-et.a.run.app/book_recommend', { books: recentBookmarks });
+                const booksID = getBooks_id.data.data;
+                await updateBookmark(userId, booksID);
+
+                const bookmarkData = await getData(userId);
+                const Bookmark_book = bookmarkData.data().bookmark;
+
+                const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`;
+
+                db.query(query, [Bookmark_book], (err, fields) => {
+                    if (err) {
+                        return res.status(500).json({
+                            statusCode: 'fail',
+                            message: err.message
+                        });
+                    }
+                    dariBookmarks = fields;
+                });
+            } else {
+                dariBookmarks = [];
+            }
 
 			const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`;
 
@@ -1091,7 +1124,8 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 					statusCode: 'success',
 					message: 'Berhasil',
 					rekomendasi: fields,
-					dariHistory: dariHistory
+					dariHistory: dariHistory,
+					bookmark: dariBookmarks
 				});
 			});
 		});
