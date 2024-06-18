@@ -1026,7 +1026,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
         						WHERE user_id = '${userId}'
         						ORDER BY time DESC  
         						LIMIT 5
-    						) AS recent_books
+    						) AS terbaru
 						) AS recent
 					FROM user u
 					WHERE user_id = '${userId}'`
@@ -1043,7 +1043,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 			const history = user.history === 'true';
 			const recent = user.recent ? user.recent.split(',').map(Number) : []
 
-			// console.log(recent);
+			console.log(recent);
 
 			let dataBuku = rekomendasi;
 			let dariHistory
