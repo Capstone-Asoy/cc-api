@@ -4,18 +4,21 @@ This is an API backend project deployed using Google App Engine, using Cloud SQL
 
 ## Fitur
 
-- **CRUD API**: Implementasi Create, Read, Update, dan Delete untuk berbagai entitas.
+- **CRUD API**: Implementasi Create, Read, Update, dan Delete.
 - **Integrasi dengan Cloud SQL**: Menggunakan Google Cloud SQL untuk penyimpanan data yang terstruktur.
+- **App Engine**: Menggunakan Google App Engine untuk deploy Back-End.
+- **Cloud Run**: Menggunakan Google Cloud Run untuk deploy container machine learning, memungkinkan pemrosesan model yang efisien dan skalabel.
 - **Penyimpanan objek dengan Cloud Storage**: Penyimpanan dan pengambilan objek dari Google Cloud Storage.
+- **Penyimpanan rekomendasi dengan Cloud firestore**: Penyimpanan dan pengambilan hasil rekomendasi dengan Google Cloud Firestore.
 - **Autentikasi**: Sistem autentikasi pengguna.
 
 ## Prerequisites
 
 Sebelum memulai, pastikan Anda memiliki:
 
-- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) terinstal di komputer.
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) installed on the computer.
 - The Google Cloud project has been created.
-- Cloud SQL and Cloud Storage are already set up in your Google Cloud project.
+- Cloud SQL, Cloud Firestore and Cloud Storage are already set up in your Google Cloud project.
 
 ## Instalasi
 
@@ -43,19 +46,21 @@ Sebelum memulai, pastikan Anda memiliki:
 1. Configure environment variables directly in the file `app.yaml`:
 
     ```yaml
-    runtime: nodejs20
+    runtime: nodejs18
     instance_class: F1
-    env_variables:
-      DB_HOST: <CLOUD_SQL_INSTANCE_IP>
-      DB_USER: <DATABASE_USER>
-      DB_PASSWORD: <DATABASE_PASSWORD>
-      DB_NAME: <DATABASE_NAME>
-      GCLOUD_PROJECT: <PROJECT_ID>
-      GCLOUD_STORAGE_BUCKET: <BUCKET_NAME>
-    automatic_scaling:
-      target_cpu_utilization: 0.65
-      min_instances: 1
-      max_instances: 3
+    service: default
+
+    handlers:
+    - url: /.*
+    script: auto
+
+    readiness_check:
+    path: "/readiness_check"
+    check_interval_sec: 5
+    timeout_sec: 4
+    failure_threshold: 2
+    success_threshold: 2
+    app_start_timeout_sec: 300
     ```
 
 ## Menjalankan Aplikasi
