@@ -252,15 +252,15 @@ exports.profile = (req, res) => { //revisi buku dari history
 		const history = user.history = user.history === 'true'
 
 		//mengirim user id ke cloud run
-		const cloudRunURL = process.env.CLOUD_RUN_URL || 'https://link-cloud-run/endpoint'; //url cloud run nanti di taruh di sini
-		const payload = { userId };
+		// const cloudRunURL = process.env.CLOUD_RUN_URL || 'https://link-cloud-run/endpoint'; //url cloud run nanti di taruh di sini
+		// const payload = { userId };
 
-		try {
-			await axios.post(cloudRunURL, payload);
-			console.log('User ID berhasil dikirim ke Cloud Run');
-		} catch (error) {
-			console.log('Gagal mengirim user ID ke Cloud Run', error.message);
-		}
+		// try {
+		// 	await axios.post(cloudRunURL, payload);
+		// 	console.log('User ID berhasil dikirim ke Cloud Run');
+		// } catch (error) {
+		// 	console.log('Gagal mengirim user ID ke Cloud Run', error.message);
+		// }
 
 		res.status(200).json({
 			statusCode: 'Success',
@@ -1079,20 +1079,34 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 			const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`;
 
-			db.query(query, [dataBuku], (err, fields) => {
+			db.query(query, [dataBuku], async (err, fields) => {
 				if (err) {
 					return res.status(500).json({
 						statusCode: 'fail',
 						message: err.message
 					});
 				}
+				try {
+					const bookmarkResponse = await axios.post('https://model-hen5ogfoeq-et.a.run.app/book_recommend', {books : dataBuku});
+					const bookmarkData = bookmarkResponse.data;
 
-				return res.status(200).json({
-					statusCode: 'success',
-					message: 'Berhasil',
-					rekomendasi: fields,
-					dariHistory: dariHistory
-				});
+					await updateData(userId, { bookmark: bookmarkData });
+					
+					return res.status(200).json({
+						statusCode: 'success',
+						message: 'Berhasil',
+						rekomendasi: fields,
+						dariHistory: dariHistory,
+						bookmark: bookmarkData
+					});
+				} catch (error) {
+					return res.status(500).json({
+						statusCode: 'fail',
+						message: 'gagal memperbarui data bookmark',
+						error: error.message
+					});
+				}
+
 			});
 		});
 	} catch (error) {
