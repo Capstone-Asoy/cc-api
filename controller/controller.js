@@ -1074,7 +1074,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 				// console.log(dariHistory);
 			} else {
-				dariHistory = 'Belum ada History!'
+				dariHistory = []
 			}
 
 			const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`;
