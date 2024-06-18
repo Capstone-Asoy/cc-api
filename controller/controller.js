@@ -974,16 +974,21 @@ exports.preference = (req, res) => {
 		}
 
 		try {
-			// const respon = await axios.post('link cloud run', {user_id: userId, genre: selectedGenres}) //blom fix
+			const respon = await axios.post('https://model-hen5ogfoeq-et.a.run.app/add_user', {genre: selectedGenres}) //blom fix
 			// .then(response => {
 			// 	console.log(response.data);
 			// })
 
-			// const rekomendasi = respon.data.rekomendasi
-			// diatas itu books_id
-			// await storeData(userId, {genre: genre, rekomendasi: rekomendasi})		
+			const user_id = respon.data.User_id
 
-			await storeData(userId, { genre: selectedGenres, rekomendasi: [1, 5, 9, 45, 556, 21, 65, 78] }) //untuk testing brooww chessshhh
+			const getBook = await axios.post('https://model-hen5ogfoeq-et.a.run.app/user_recommend', {user: user_id});
+			console.log(user_id);
+
+			const dataBuku = getBook.data.data
+			// console.log(getBook.data.data);
+
+			await storeData(userId, {genre: selectedGenres, rekomendasi: dataBuku})		
+
 
 			res.status(200).json({
 				statusCode: 'Success',
@@ -993,7 +998,7 @@ exports.preference = (req, res) => {
 		} catch (error) {
 			res.status(400).json({
 				statusCode: 'fail',
-				message: error.message
+				message: error.response ? error.response.data : error.message
 			})
 		}
 	})
@@ -1016,12 +1021,15 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 		const rekomendasi = book.data().rekomendasi.map(Number)
 
 		const sql = `SELECT u.history, (SELECT GROUP_CONCAT(books_id) 
-						FROM history 
-						WHERE user_id = '${userId}' 
-						ORDER BY time desc  
-						LIMIT 5) AS recent
-						FROM user u
-						WHERE user_id = '${userId}'`
+						FROM ( SELECT books_id
+								FROM history 
+        						WHERE user_id = '${userId}'
+        						ORDER BY time DESC  
+        						LIMIT 5
+    						) AS recent_books
+						) AS recent
+					FROM user u
+					WHERE user_id = '${userId}'`
 
 		db.query(sql, async (err, hasil) => {
 			if (err) {
@@ -1035,22 +1043,38 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 			const history = user.history === 'true';
 			const recent = user.recent ? user.recent.split(',').map(Number) : []
 
-
-
 			// console.log(recent);
 
 			let dataBuku = rekomendasi;
+			let dariHistory
 
 			if (history) {
-				// const getBooks_id = await axios.post('link cloud run', {user_id: userId, books_id: idBook}) //blom fix
+				// console.log(recent);
+				const getBooks_id = await axios.post('https://model-hen5ogfoeq-et.a.run.app/book_recommend', {books: recent})
 
-				// const booksID = getBooks_id.data.books_id
+				const booksID = getBooks_id.data.data
 
-				await updateData(userId, recent); // untuk testing
-				// await updateData(userId, booksID); 
+				// await updateData(userId, recent); // untuk testing
+				await updateData(userId, booksID); 
 
-				dataBuku = [...new Set([...rekomendasi, ...recent])];
-				// console.log("databuku: ",dataBuku);
+				const history = await getData(userId)
+				const History_book = history.data().history
+
+				const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`;
+
+				db.query(query, [History_book], (err, fields) => {
+					if (err) {
+						return res.status(500).json({
+							statusCode: 'fail',
+							message: err.message
+						});
+					}
+					dariHistory = fields
+				})
+
+				// console.log(dariHistory);
+			} else {
+				dariHistory = 'Belum ada History!'
 			}
 
 			const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`;
@@ -1066,7 +1090,8 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 				return res.status(200).json({
 					statusCode: 'success',
 					message: 'Berhasil',
-					data: fields
+					rekomendasi: fields,
+					dariHistory: dariHistory
 				});
 			});
 		});

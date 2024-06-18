@@ -17,7 +17,7 @@ async function getData(id, res) {
 
 async function updateData(id, data) {
   const update = firestore.collection('users')
-  return update.doc(id).update({rekomendasi: Firestore.FieldValue.arrayUnion(...data)})
+  return update.doc(id).update({history: data})
 }
 
 module.exports = {storeData, getData, updateData}
