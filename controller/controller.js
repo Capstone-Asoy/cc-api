@@ -982,7 +982,7 @@ exports.preference = (req, res) => {
 			const user_id = respon.data.User_id
 
 			const getBook = await axios.post('https://model-hen5ogfoeq-et.a.run.app/user_recommend', {user: user_id});
-			console.log(user_id);
+			// console.log(user_id);
 
 			const dataBuku = getBook.data.data
 			// console.log(getBook.data.data);
@@ -1043,7 +1043,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 			const history = user.history === 'true';
 			const recent = user.recent ? user.recent.split(',').map(Number) : []
 
-			console.log(recent);
+			// console.log(recent);
 
 			let dataBuku = rekomendasi;
 			let dariHistory
