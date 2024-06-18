@@ -1021,22 +1021,25 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 		const rekomendasi = book.data().rekomendasi.map(Number)
 
 		const sql = `SELECT u.history, (SELECT GROUP_CONCAT(books_id) 
-						FROM ( SELECT books_id
-								FROM history 
-        						WHERE user_id = '${userId}'
-        						ORDER BY time DESC  
-        						LIMIT 5
-    						) AS terbaru
-						) AS recent,
-						COUNT(bk.bookmark_id) AS bookmarks,
-						IF(COUNT(bk.bookmark_id) >= 5, 
-							GROUP_CONCAT(bk.books_id ORDER BY bk.time DESC LIMIT 5), 
-							NULL
-						) AS recent_bookmarks
-					FROM user u
-					LEFT JOIN bookmarks bk ON u.user_id = bk.user_id
-					WHERE u.user_id = '${userId}'
-					GROUP BY u.user_id;`;
+                        FROM ( SELECT books_id
+                                FROM history 
+                                WHERE user_id = '${userId}'
+                                ORDER BY time DESC  
+                                LIMIT 5
+                            ) AS terbaru
+                        ) AS recent,
+                        COUNT(bk.bookmark_id) AS bookmarks,
+                        IF(COUNT(bk.bookmark_id) >= 5, 
+                            (SELECT GROUP_CONCAT(books_id ORDER BY time DESC)
+                                FROM bookmarks
+                                WHERE user_id = '${userId}'
+                                LIMIT 5),
+                            NULL
+                        ) AS recent_bookmarks
+                    FROM user u
+                    LEFT JOIN bookmarks bk ON u.user_id = bk.user_id
+                    WHERE u.user_id = '${userId}'
+                    GROUP BY u.user_id;`;
 
 		db.query(sql, async (err, hasil) => {
 			if (err) {
