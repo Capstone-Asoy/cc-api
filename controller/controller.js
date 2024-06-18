@@ -1084,7 +1084,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 				// console.log(dariHistory);
 			} else {
-				dariHistory = []
+				dariHistory = [];
 			}
 
 			if (bookmarks >= 5) {
