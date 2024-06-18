@@ -17,8 +17,12 @@ async function getData(id, res) {
 
 async function updateData(id, data) {
   const update = firestore.collection('users')
-  // return update.doc(id).update({history: data})
-  return update.doc(id).update(data)
+  return update.doc(id).update({history: data})
 }
 
-module.exports = {storeData, getData, updateData}
+async function updateBookmark(id, bookmarkData) {
+  const update = firestore.collection('users');
+  return update.doc(id).update({ bookmark: bookmarkData });
+}
+
+module.exports = {storeData, getData, updateData, updateBookmark};
