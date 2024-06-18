@@ -26,7 +26,7 @@ Sebelum memulai, pastikan Anda memiliki:
 
     ```sh
     git clone https://github.com/Capstone-Asoy/cc-api.git
-    cd repository
+    cd cc-api
     ```
 
 2. Instal dependensi:
