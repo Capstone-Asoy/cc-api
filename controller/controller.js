@@ -31,7 +31,7 @@ const upload = multer({
 
 function validEmail(email) {
 	const domain = email.split('@')[1];
-	const cekDomain = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
+	const cekDomain = ['gmail.com', 'yahoo.com'];
 	return cekDomain.includes(domain);
 }
 
