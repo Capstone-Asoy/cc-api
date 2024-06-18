@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer')
 const bucket = require('../storage/upload')
 // const validator = require('validator')
-const { storeData, getData, updateData } = require('../storage/firestore');
+const { storeData, getData, updateData, updateBookmark } = require('../storage/firestore');
 const axios = require('axios');
 
 exports.path = (req, res) => {
@@ -1091,6 +1091,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 			}
 
 			if (bookmarks >= 5) {
+				// console.log('ini bookmark', bookmarks);
                 const getBooks_id = await axios.post('https://model-hen5ogfoeq-et.a.run.app/book_recommend', { books: recentBookmarks });
                 const booksID = getBooks_id.data.data;
                 await updateBookmark(userId, booksID);
