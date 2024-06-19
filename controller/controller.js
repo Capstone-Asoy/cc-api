@@ -7,6 +7,8 @@ const bucket = require('../storage/upload')
 // const validator = require('validator')
 const { storeData, getData, updateData, updateBookmark } = require('../storage/firestore');
 const axios = require('axios');
+require('dotenv').config()
+
 
 exports.path = (req, res) => {
 	try {
