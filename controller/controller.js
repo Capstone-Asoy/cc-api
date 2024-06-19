@@ -955,6 +955,7 @@ exports.getGenres = (req, res) => {
 exports.preference = (req, res) => {
 	const userId = req.userId
 	const { selectedGenres } = req.body
+	const CR = process.env.Cloud_Run
 
 	if (!selectedGenres) {
 		res.status(400).json({
@@ -974,14 +975,14 @@ exports.preference = (req, res) => {
 		}
 
 		try {
-			const respon = await axios.post('https://model-hen5ogfoeq-et.a.run.app/add_user', {genre: selectedGenres}) //blom fix
+			const respon = await axios.post(`${CR}/add_user`, {genre: selectedGenres}) //blom fix
 			// .then(response => {
 			// 	console.log(response.data);
 			// })
 
 			const user_id = respon.data.User_id
 
-			const getBook = await axios.post('https://model-hen5ogfoeq-et.a.run.app/user_recommend', {user: user_id});
+			const getBook = await axios.post(`${CR}/user_recommend`, {user: user_id});
 			// console.log(user_id);
 
 			const dataBuku = getBook.data.data
@@ -1007,6 +1008,7 @@ exports.preference = (req, res) => {
 
 exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung data baru
 	const userId = req.userId;
+	const CR = process.env.Cloud_Run
 
 	try {
 		const book = await getData(userId);
@@ -1063,7 +1065,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 			if (history) {
 				// console.log(recent);
-				const getBooks_id = await axios.post('https://model-hen5ogfoeq-et.a.run.app/book_recommend', {books: recent})
+				const getBooks_id = await axios.post(`${CR}/book_recommend`, {books: recent})
 
 				const booksID = getBooks_id.data.data
 
@@ -1092,7 +1094,7 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 			if (bookmarks >= 5) {
 				// console.log('ini bookmark', bookmarks);
-                const getBooks_id = await axios.post('https://model-hen5ogfoeq-et.a.run.app/book_recommend', { books: recentBookmarks });
+                const getBooks_id = await axios.post(`${CR}/book_recommend`, { books: recentBookmarks });
                 const booksID = getBooks_id.data.data;
                 await updateBookmark(userId, booksID);
 
@@ -1116,13 +1118,21 @@ exports.getPreference = async (req, res) => {  // kirim userID hasinya gabung da
 
 			const query = `SELECT books_id, judul, image FROM books WHERE books_id in (?)`;
 
-			db.query(query, [dataBuku], (err, fields) => {
+			db.query(query, [dataBuku], async (err, fields) => {
 				if (err) {
 					return res.status(500).json({
 						statusCode: 'fail',
 						message: err.message
 					});
 				}
+
+				// await axios.get('https://model-hen5ogfoeq-et.a.run.app/update')
+				// .then(response => {
+				// 	console.log('Update successful:');
+				//   })
+				//   .catch(error => {
+				// 	console.error('There was an error updating:', error);
+				//   });
 
 				return res.status(200).json({
 					statusCode: 'success',
