@@ -12,6 +12,35 @@ This is an API backend project deployed using Google App Engine, using Cloud SQL
 - **Penyimpanan rekomendasi dengan Cloud firestore**: Penyimpanan dan pengambilan hasil rekomendasi dengan Google Cloud Firestore.
 - **Autentikasi**: Sistem autentikasi pengguna.
 
+## Endpoints
+
+#### User Authentication
+- `POST` : `/register` - Register a new user.
+- `POST` : `/login` - User login.
+- `POST` : `/logout` - User logout.
+- `GET` : `/me` - Retrieve user profile information.
+- `PUT` : `/editProfile` - Update user profile information.
+
+#### Book Operations
+- `GET` : `/detailBook/:id` - Retrieve details of a book by ID.
+- `POST` : `/bookmarks` - Add a bookmark for a book.
+- `DELETE` : `/bookmarks/:books_id` - Delete a bookmark for a specific book.
+- `GET` : `/bookmarks` - Retrieve user's bookmarks.
+- `GET` : `/search` - Search books based on keywords.
+- `POST` : `/detailBook/addRating` - Add a rating and review for a book.
+- `GET` : `/filter` - Filter books based on certain criteria.
+- `GET` : `/getHistory` - Retrieve user's search or interaction history.
+- `POST` : `/preference` - Set user preferences for book genres.
+- `GET` : `/getRekomendasi` - Get personalized book recommendations based on user preferences.
+
+#### Miscellaneous
+- `GET` : `/genres` - Retrieve available book genres.
+
+#### System Readiness
+- `GET` : `/readiness_check` - Check system readiness status.
+
+Each endpoint is protected by token authentication (`cekToken`) unless otherwise specified. See individual endpoint documentation for detailed usage and parameters.
+
 ## Prerequisites
 
 Sebelum memulai, pastikan Anda memiliki:
