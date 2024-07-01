@@ -32,8 +32,6 @@ This is an API backend project deployed using Google App Engine, using Cloud SQL
 - `GET` : `/getHistory` - Retrieve user's search or interaction history.
 - `POST` : `/preference` - Set user preferences for book genres.
 - `GET` : `/getRekomendasi` - Get personalized book recommendations based on user preferences.
-
-#### Miscellaneous
 - `GET` : `/genres` - Retrieve available book genres.
 
 #### System Readiness
